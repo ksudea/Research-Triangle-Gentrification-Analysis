@@ -10,5 +10,5 @@ Instructions: http://www2.stat.duke.edu/courses/Spring20/sta210.001/project/proj
 - Analysis: 
   - due Thu, Mar 26 at noon for peer review
   - due Thu, Apr 9 for grading
-- Presentation: Tue, Apr 28, 9a - 12p (slides due Mon, Apr 27 at 11:59p)
+- Presentation: TBD
 - Final writeup: due Tue, Apr 28 at 11:59p
