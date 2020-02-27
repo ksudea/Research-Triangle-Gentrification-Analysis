@@ -1,0 +1,32 @@
+---
+subtitle: "Project Proposal"
+author: "Team Name + Name of Group Members"
+date: "`r Sys.Date()`"
+output: 
+  pdf_document: 
+  keep_md: true
+---
+
+```{r load-packages}
+# include packages as needed
+```
+
+```{r load-data}
+# load the data
+```
+
+**ERASE ALL INSTRUCTIONS BEFORE SUBMITTING THE PROPOSAL**
+
+### Project Description
+
+
+- What is the research question you wish to explore? 
+*This includes an introduction to the subject matter you’re investigating, the motivation for the for your research question (citing any relevant literature), and your hypotheses regarding the research question of interest.*
+
+
+- Describe the dataset you wish to explore. 
+*This includes describing the observations in the data, a general description of the variables, and how the data was originally collected (not how you found the data but how the original curator of the data collected it.)*
+
+## The Data
+
+- Use the glimpse function print a summary of the data frame at the end of your proposal.
