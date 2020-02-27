@@ -2,7 +2,7 @@
 
 Final project for STA 210!
 
-Instructions: https://www2.stat.duke.edu/courses/Spring20/sta210.001/project/project.html
+Instructions: http://www2.stat.duke.edu/courses/Spring20/sta210.001/project/project.html
 
 ## Project components 
 
