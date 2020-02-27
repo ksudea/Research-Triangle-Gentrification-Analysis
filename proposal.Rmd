@@ -2,9 +2,7 @@
 subtitle: "Project Proposal"
 author: "Team Name + Name of Group Members"
 date: "`r Sys.Date()`"
-output: 
-  pdf_document: 
-  keep_md: true
+output: pdf_document
 ---
 
 ```{r load-packages}
