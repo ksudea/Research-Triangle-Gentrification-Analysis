@@ -1,7 +1,7 @@
 ---
 subtitle: "Project Proposal"
-author: "Team Name + Name of Group Members"
-date: "`r Sys.Date()`"
+author: "Apache Junction Armchairs: Ellie, Ryan, Sude, Darren"
+date: "2/27/2020"
 output: pdf_document
 ---
 
