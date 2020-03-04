@@ -19,13 +19,20 @@ output: pdf_document
 
 
 - What is the research question you wish to explore? 
+
+The research question that we wish to explore is what factors have contributed to the gentrification of the Research triangle (Counties including: Durham, Wake, Orange and Chatham) and where is it occuring most. 
+
 *This includes an introduction to the subject matter you’re investigating, the motivation for the for your research question (citing any relevant literature), and your hypotheses regarding the research question of interest.*
+
+In the past 10 years gentrification in Durham has become a major issue. We are interested in finding out where and why gentrification is happening most or whether it is occuring throughout the entire Research Trianlge. We predict these variables and our analysis will give us insight into the displacement of the Black population in Durham and the entire Research Trianlge. We chose to look at census tracks in Durham, Wake Orange and Chatham counties to analyze this movement. 
+
+We hypothesize that census tracks in which there is an increase in college educated whites, an increase in median household price and an increase in the amount of people who obtain a bachelor degree or higher will correspond to a decrease in Black population and we are most interested in investigating where (which census tracks) this decrease occurs.
 
 
 - Describe the dataset you wish to explore. 
 *This includes describing the observations in the data, a general description of the variables, and how the data was originally collected (not how you found the data but how the original curator of the data collected it.)*
 
-
+We put together a dataset of relevant variables that we wish to explore from https://factfinder.census.gov/faces/nav/jsf/pages/index.xhtml. 
 
 ## The Data
 
