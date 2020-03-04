@@ -25,6 +25,10 @@ output: pdf_document
 - Describe the dataset you wish to explore. 
 *This includes describing the observations in the data, a general description of the variables, and how the data was originally collected (not how you found the data but how the original curator of the data collected it.)*
 
+
+
 ## The Data
 
 - Use the glimpse function print a summary of the data frame at the end of your proposal.
+
+
