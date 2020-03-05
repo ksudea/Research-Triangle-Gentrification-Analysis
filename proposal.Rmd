@@ -7,10 +7,13 @@ output: pdf_document
 
 ```{r load-packages}
 # include packages as needed
+library(tidyverse)
+
 ```
 
 ```{r load-data}
 # load the data
+gentdata <- read_csv("data/gentdata.csv")
 ```
 
 **ERASE ALL INSTRUCTIONS BEFORE SUBMITTING THE PROPOSAL**
@@ -40,7 +43,7 @@ All of our demographic data is framed in terms of percentage point change from 2
 - Use the glimpse function print a summary of the data frame at the end of your proposal.
 
 ```{r}
-
+glimpse(gentdata)
 ```
 
 
