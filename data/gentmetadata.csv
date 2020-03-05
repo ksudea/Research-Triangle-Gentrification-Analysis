@@ -1,0 +1,15 @@
+Variable name,Actual variable
+geoid,Census Tract
+county,County
+rural,Rural / Urban
+black,PP Change in black population
+income,Change in median household income ($)
+collegewhite,PP Change in College-educated whites
+nodiploma,"PP Change in less than highschool, no diploma 2017-2010"
+highschoolgrad,"PP change in High school graduate (includes equivalency), some college and associates, 2017-2010"
+collegedegree,"PP change in Bachelors Degree or higher, 2017-2010"
+homeprice,Change in median home price
+whitecollar,Change in % White Collar
+early_late,"PP change in leaving for work: 12am-8am, 12pm-11:59 pm"
+privateschool,PP Change in Private Schools
+moved,PP change in Moved from another state
