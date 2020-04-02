@@ -1,0 +1,144 @@
+---
+title: "Untitled"
+author: "Ryan Goodman"
+date: "3/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+install.packages("leaps")
+install.packages("rms")
+install.packages("Sleuth3")
+```
+
+
+```{r}
+gentdata <- read_csv("data/gentdata.csv", col_names = TRUE, col_types = cols())
+newgent <- na.omit(gentdata)
+
+```
+
+```{r}
+newgent <- newgent %>%
+  mutate(black=as.numeric(black))
+
+newgent <- newgent %>%
+  mutate(income=as.numeric(income))
+
+newgent <- newgent %>%
+  mutate(collegewhite=as.numeric(collegewhite))
+
+newgent <- newgent %>%
+  mutate(homeprice=as.numeric(homeprice))
+
+newgent <- newgent %>%
+  mutate(nodiploma=as.numeric(nodiploma))
+
+newgent <- newgent %>%
+  mutate(highschoolgrad=as.numeric(highschoolgrad))
+
+newgent <- newgent %>%
+  mutate(collegedegree=as.numeric(collegedegree))
+
+newgent <- newgent %>%
+  mutate(whitecollar=as.numeric(whitecollar))
+
+newgent <- newgent %>%
+  mutate(early_late=as.numeric(early_late))
+
+newgent <- newgent %>%
+  mutate(privateschool=as.numeric(privateschool))
+
+newgent <- newgent %>%
+  mutate(moved=as.numeric(moved))
+```
+
+
+```{r}
+newgent <- na.omit(newgent)
+```
+
+
+```{r}
+model <- lm(black ~ collegewhite + income + homeprice + whitecollar + privateschool + moved + nodiploma + highschoolgrad + collegedegree + + county + rural*homeprice, 
+                  data = newgent)
+
+tidy(model, conf.int = TRUE) %>%
+  kable(format = "markdown", digits = 3)
+  
+```
+
+
+```{r}
+newgent <- newgent %>%
+  mutate(residuals = resid(model))
+
+newgent <- newgent %>%
+  mutate(residuals = as.numeric(residuals))
+
+
+```
+
+```{r}
+model_aug <- augment(model)
+glimpse(model_aug)
+```
+
+
+```{r}
+ggplot(data = newgent, mapping = aes(x = privateschool, y = black)) + 
+  geom_point() + geom_smooth(method = lm)
+
+ggplot(data = newgent, mapping = aes(x = collegewhite, y = black)) + 
+  geom_point() + geom_smooth(method = lm)
+
+ggplot(data = newgent, mapping = aes(x = homeprice, y = black)) + 
+  geom_point() + geom_smooth(method = lm)
+
+ggplot(data = newgent, mapping = aes(x = income, y = black)) + 
+  geom_point() + geom_smooth(method = lm)
+
+ggplot(data = newgent, mapping = aes(x = moved, y = black)) + 
+  geom_point() + geom_smooth(method = lm)
+
+
+```
+
+```{r}
+ggplot(data = newgent, mapping = aes(x = privateschool)) + 
+  geom_histogram()
+
+ggplot(data = newgent, mapping = aes(x = collegewhite)) + 
+  geom_histogram()
+
+ggplot(data = newgent, mapping = aes(x = homeprice)) + 
+  geom_histogram()
+
+ggplot(data = newgent, mapping = aes(x = income)) + 
+  geom_histogram()
+
+ggplot(data = newgent, mapping = aes(x = moved)) + 
+  geom_histogram()
+```
+
+
+```{r}
+ggplot(data = model_aug, aes(x = .fitted, y = .resid)) +
+  geom_point(alpha = 0.3) + 
+  geom_hline(yintercept = 0, color = "red")
+
+ggplot(data = newgent, mapping = aes(x = residuals)) + 
+  geom_histogram()
+
+ggplot(data = newgent, mapping = aes(sample = residuals)) + 
+  stat_qq() + 
+  stat_qq_line()
+```
+
+
