@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Analysis"
 author: "Ryan Goodman"
 date: "3/5/2020"
 output: html_document
@@ -12,9 +12,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
-install.packages("leaps")
-install.packages("rms")
-install.packages("Sleuth3")
+library(tidyverse)
+library(knitr)
+library(broom)
+library(ggplot2)
+library(openintro)
 ```
 
 
