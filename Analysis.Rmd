@@ -12,9 +12,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
-install.packages("leaps")
-install.packages("rms")
-install.packages("Sleuth3")
+library(tidyverse)
+library(knitr)
+library(broom)
+library(ggplot2)
+library(openintro)
 ```
 
 
