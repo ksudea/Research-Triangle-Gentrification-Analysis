@@ -60,6 +60,11 @@ newgent <- newgent %>%
 newgent <- newgent %>%
   mutate(moved=as.numeric(moved))
 ```
+
+```{r}
+newgent <- drop_na(gentdata)
+```
+
 ```{r}
 min(newgent$black)
 ```
@@ -75,11 +80,11 @@ newgent <- na.omit(newgent)
 
 
 ```{r}
-model <- lm(black ~ collegewhite + income + homeprice + whitecollar + privateschool + moved + nodiploma + highschoolgrad + collegedegree + + county + rural*homeprice, 
+model <- lm(black ~ collegewhite + income + homeprice + whitecollar + privateschool + moved + nodiploma + highschoolgrad + collegedegree + county + rural*homeprice, 
                   data = newgent)
 
 tidy(model, conf.int = TRUE) %>%
-  kable(format = "markdown", digits = 3)
+  kable(format = "markdown", digits = 5)
   
 ```
 
