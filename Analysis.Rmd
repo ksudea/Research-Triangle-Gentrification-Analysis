@@ -2,11 +2,18 @@
 title: "Data Analysis"
 author: "Apache Juntion Armchairs: Ellie, Ryan, Sude and Darren"
 date: "3/5/2020"
-output: "html_document"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+                      warning=FALSE, 
+                      message=FALSE)
+options(tinytex.verbose = TRUE)
+suppressMessages(library("tidyverse"))
 ```
 
 ## Load packages
@@ -27,6 +34,7 @@ library(RColorBrewer) #custom color palettes
 library(sf)
 library(spatialreg)
 library(spdep)
+library(anchors)
 ```
 
 ## Loading and Manipulating the Data
@@ -85,10 +93,10 @@ gent_rural <- gentdata %>%
   group_by(geoid) %>% 
   summarise(rural)
 
-manual <- inner_join(manual, gent_rural, copy=T)
+manual <- inner_join(manual, gent_rural, by="geoid")
 ```
 
-manually imputing the mean value for homeprice
+manually imputing the mean value for homeprice and income, and setting Na values of PP change variables to zero.
 ```{r}
 mean_homeprice <- manual %>%
   summarise(mean = mean(homeprice_med, na.rm = T)) %>%
@@ -104,23 +112,45 @@ mean_income <- manual %>%
 manual <- manual %>%
   mutate(income_med = if_else(is.na(income_med), mean_income, income_med))
 
+
+mean_income <- manual %>%
+  summarise(mean = mean(income_med, na.rm = T)) %>%
+  pull()
+
+manual <- manual %>%
+  mutate(income_med = if_else(is.na(income_med), mean_income, income_med))
+
+manual <- manual %>%
+  mutate(moved = if_else(is.na(moved), 0, moved))
+
+manual <- replace.value(manual,c("black","collegewhite","nodiploma","highschoolgrad","collegedegree","privateschool", "early_late", "moved"), "NaN", as.double(0))
+
 ```
 
 ### EXPLORATORY DATA ANALYSIS
 
 #Univariate analysis
 
-The variable "black" is the change in black population from 2010 to 2017. We will use this variable as our response to predict whether gentrification is occurring in a region in the research triangle. 
 
 The distribution of change in Black population:
 ```{r}
 ggplot(data = manual, mapping = aes(x = black)) + 
   geom_histogram()
 
-typeof(manual$black)
 (sd(manual$black))
 ```
-std deviation is =  6.765474
+std deviation is =  6.765474. We will use this value (-6.765474) as the threshold to determine if gentrification has occurred in a census tract. If a tract has experienced more than a -6.765 PP change in the Black population, we will consider that census tract "gentrified." Even though the mean is not exactly at 0, it is close enough that we feel one standard deviation away from 0 is a sufficient threshold for gentrification.
+
+```{r}
+manual <- manual %>% 
+  mutate(gent = case_when(black>(-6.765474) ~ 0, black<=(-6.765474) ~ 1))
+
+manual <- manual %>%
+  mutate(gent = if_else(is.na(gent), 0, gent))
+
+manual %>% 
+  count(gent) 
+```
 
 More Univariate EDA: 
 ```{r}
@@ -139,29 +169,51 @@ p4 <-ggplot(data = manual, mapping = aes(x = income_med)) +
 p5 <-ggplot(data = manual, mapping = aes(x = moved)) + 
   geom_histogram()
 
-p1 + p3 + p2 + p4 +p5
+p11 <-ggplot(data = manual, mapping = aes(x = nodiploma)) + 
+  geom_histogram()
+
+p12 <-ggplot(data = manual, mapping = aes(x = highschoolgrad)) + 
+  geom_histogram()
+
+p13 <-ggplot(data = manual, mapping = aes(x = collegedegree)) + 
+  geom_histogram()
+
+p1 + p3 + p2 + p4 +p5 + p11 + p12 + p13
 ```
+Each predictor variable is normally distributed around 0.
+
 
 Bivariate EDA: 
 
 ```{r}
-p6 <- ggplot(data = manual, mapping = aes(x = black, y = privateschool)) + 
+p6 <- ggplot(data = manual, mapping = aes(x = gent, y = privateschool)) + 
   geom_boxplot()
 
-p7 <- ggplot(data = manual, mapping = aes(x = black, y = collegewhite)) + 
+p7 <- ggplot(data = manual, mapping = aes(x = gent, y = collegewhite)) + 
   geom_boxplot()
 
-p8 <- ggplot(data = manual, mapping = aes(x = black, y = moved)) + 
+p8 <- ggplot(data = manual, mapping = aes(x = gent, y = moved)) + 
   geom_boxplot()
 
-p9 <- ggplot(data = manual, mapping = aes(x = black, y = income_med)) + 
+p9 <- ggplot(data = manual, mapping = aes(x = gent, y = income_med)) + 
   geom_boxplot()
 
-p10 <- ggplot(data = manual, mapping = aes(x = black, y = homeprice_med)) + 
+p10 <- ggplot(data = manual, mapping = aes(x = gent, y = homeprice_med)) + 
   geom_boxplot()
 
-p6 + p7 + p8 + p9 + p10
+p14 <- ggplot(data = manual, mapping = aes(x = gent, y = nodiploma)) + 
+  geom_boxplot()
+
+p15 <- ggplot(data = manual, mapping = aes(x = gent, y = highschoolgrad)) + 
+  geom_boxplot()
+
+p16 <- ggplot(data = manual, mapping = aes(x = gent, y = collegedegree)) + 
+  geom_boxplot()
+
+p6 + p7 + p8 + p9 + p10 + p14 + p15 + p16
 ```
+The relationship between the response variable "gent" and the predictor variables are all each roughly normal.
+
 
 ###Part I: Location of Gentrification
 
@@ -169,7 +221,7 @@ In part I, the following research question will be examined:
 
 Where in the Research Triangle (counties including Durham, Wake, Orange and Chatham) is gentrification occurring the most?
 
-Recoding our response variable to "1" if change in black population is <= "-6.765" or one standard deviation below the mean and equal to "0" if >  "6.765" in order visualize and eventually create a logistic model:
+Recoding our response variable to "1" if change in black population is <= "-6.765" or one standard deviation below 0 (roughly the mean) and equal to "0" if >  "6.765" in order visualize and eventually create a logistic model:
 
 ```{r}
 manual <- manual %>% 
@@ -181,22 +233,19 @@ manual <- manual %>%
 manual %>% 
   count(gent) 
 
-typeof(manual$gent)
 ```
 
 Reading in spatial data
 
 ```{r}
-# read the shapefile
 shape <- read_sf(dsn = "data", layer = "triangletracts")
 
-# convert RegionID to numeric before we join anddrop some columns that we don't need
 shape <- shape %>%
   mutate(geoid = as.character(AFFGEOID)) 
-# merge keeping only those in both data sets
 
 merged <- inner_join(shape, manual, by = "geoid")
 ```
+
 
 Plotting research triangle area:
 ```{r}
@@ -215,11 +264,35 @@ ggplot(data = merged, aes(fill = gent)) +
   scale_fill_distiller(palette = 'RdBu', guide = "legend")
 ```
 
+#Plotting urban areas by census tract:
+
+Converting "rural" into a binary variable.
+```{r}
+merged <- merged %>% 
+    mutate(rural = recode(rural, 
+                      "Rural" = "0", 
+                      "Urban" = "1"))
+merged <- merged %>% 
+  mutate(rural=as.character(rural)) %>% 
+  mutate(rural=as.numeric(rural))
+```
+
+
+```{r}
+ggplot(data = merged, aes(fill = rural)) +
+  geom_sf() +
+  labs(title = "Research Triangle", 
+       subtitle = "Urban areas by census tract") +
+  theme_void() +
+  scale_fill_distiller(palette = 'RdBu', guide = "legend")
+```
+By comparing the locations of gentrified tracts to urban areas, we can see that almost all gentrified tracts are in urban areas. Moreover, many of the gentrified tracts appear to be in and around city centers. This makes sense--we tend to think of gentrification as affecting highly urbanized downtown areas.
+
 ###Part 2: Factors Associated with Gentrification
 
 In part 2, the following research question will be examined:
 
-What factors are associated with and the strongest predictors of the gentrification of these areas.
+What factors are associated with and what are the strongest predictors of the gentrification of these areas?
 
 We already determined a model using aic and drop in deviance tests ....
 
@@ -332,7 +405,7 @@ tidy(model_aic_full, conf.int = TRUE, exponentiate = FALSE) %>%
 
 ```
 
-We would like to discuss the variables that have the most impact on the response variable gent. Therefore, we will discuss variables with p-values of <0.05. The variable collegewhite seems to have a reliably strong impact on gent: holding all other variables constant, a unit change in collewhite causes the odds of gentrification are expected to multiply by a factor of exp(0.089) = 1.093. However, this impact is not as strong as that of the rural variable. According to the model coefficient for the term ruralUrban, holding all other variables constant, the odds of gentrification for an urban area is expected to be 2.55 that of a rural locale. We would like to suggest that the change in college-educated whites in a county and urban character likely greatly impact "gentrification" as we have classified it (a significant decrease in black population). 
+We would like to discuss the variables that have the most impact on the response variable gent. Therefore, we will discuss variables with p-values of <0.05. The variable collegewhite seems to have a reliably strong impact on gent: holding all other variables constant, with a unit change in collegewhite, the odds of gentrification are expected to multiply by a factor of exp(0.089) = 1.093. However, this impact is not as strong as that of the rural variable. According to the model coefficient for the term ruralUrban, holding all other variables constant, the odds of gentrification for an urban area is expected to be 2.55 that of a rural locale. We would like to suggest that the change in college-educated whites in a county and urban character likely greatly impact "gentrification" as we have classified it (a significant decrease in black population). 
 
 
 
