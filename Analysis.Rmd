@@ -17,132 +17,186 @@ library(knitr)
 library(broom)
 library(ggplot2)
 library(openintro)
+library(nnet)
+library(pROC)
+library(plotROC)
+library(psych)
 ```
 
 
 ```{r}
 gentdata <- read_csv("data/gentdata.csv", col_names = TRUE, col_types = cols())
-newgent <- na.omit(gentdata)
+```
+
+
+```{r}
+manual <- read_csv("data/ImportR.csv", col_names = TRUE, col_types = cols())
+```
+
+```{r}
+manual <- manual %>% 
+  mutate(black = 100*(black17/total17 - black10/total10))
+
+manual <- manual %>% 
+  mutate(collegewhite = 100*(collegewhite17/total17 - collegewhite10/total10))
+
+manual <- manual %>% 
+  mutate(nodiploma = 100*(nodiploma17/total17 - nodiploma10/total10))
+
+manual <- manual %>% 
+  mutate(highschoolgrad = 100*(highschoolgrad17/total17 - highschoolgrad10/total10))
+
+manual <- manual %>% 
+  mutate(collegedegree = 100*(collegedegree17/total17 - collegedegree10/total10))
+
+manual <- manual %>% 
+  mutate(collegedegree = 100*(collegedegree17/total17 - collegedegree10/total10))
+
+manual <- manual %>% 
+  mutate(early_late = 100*(early_late17/employed17 - early_late10/employed10))
+
+manual <- manual %>% 
+  mutate(privateschool = 100*(privateschool17/totalpop17 - privateschool10/totalpop10))
+```
+
+```{r}
+manual <- manual %>% 
+  mutate(moved17=as.numeric(moved17)) %>% 
+  mutate(moved10=as.numeric(moved10))
+
+manual <- manual %>% 
+  mutate(moved = moved17-moved10)
+
+manual <- manual %>% 
+  mutate(homeprice17=as.numeric(homeprice17)) %>% 
+  mutate(homeprice10=as.numeric(homeprice10))
+
+manual <- manual %>% 
+  mutate(homeprice_med = (homeprice17 - homeprice10))
+
+manual <- manual %>% 
+  mutate(income2017=as.numeric(income2017)) %>% 
+  mutate(income2010=as.numeric(income2010))
+
+manual <- manual %>% 
+  mutate(income_med = (income2017 - income2010))
+
+names(manual)[1] <- "geoid"
 
 ```
 
 ```{r}
-newgent <- newgent %>%
-  mutate(black=as.numeric(black))
-
-newgent <- newgent %>%
-  mutate(income=as.numeric(income))
-
-newgent <- newgent %>%
-  mutate(collegewhite=as.numeric(collegewhite))
-
-newgent <- newgent %>%
-  mutate(homeprice=as.numeric(homeprice))
-
-newgent <- newgent %>%
-  mutate(nodiploma=as.numeric(nodiploma))
-
-newgent <- newgent %>%
-  mutate(highschoolgrad=as.numeric(highschoolgrad))
-
-newgent <- newgent %>%
-  mutate(collegedegree=as.numeric(collegedegree))
-
-newgent <- newgent %>%
-  mutate(whitecollar=as.numeric(whitecollar))
-
-newgent <- newgent %>%
-  mutate(early_late=as.numeric(early_late))
-
-newgent <- newgent %>%
+manual <- manual %>% 
+  mutate(income_med=as.numeric(income)) %>% 
+  mutate(homeprice_med=as.numeric(homeprice)) %>% 
+  mutate(collegewhite=as.numeric(collegewhite)) %>% 
+  mutate(whitecollar=as.numeric(whitecollar)) %>% 
+  mutate(early_late=as.numeric(early_late)) %>% 
+  mutate(highschoolgrad=as.numeric(highschoolgrad)) %>% 
+  mutate(collegedegree=as.numeric(collegedegree)) %>% 
+  mutate(nodiploma=as.numeric(nodiploma)) %>% 
+  mutate(black=as.numeric(black)) %>% 
   mutate(privateschool=as.numeric(privateschool))
-
-newgent <- newgent %>%
-  mutate(moved=as.numeric(moved))
-```
-
-```{r}
-newgent <- drop_na(gentdata)
-```
-
-```{r}
-min(newgent$black)
-```
-
-```{r}
-newgent <- newgent %>% 
-  mutate(log_black=log(23.49+black))
-```
-
-```{r}
-newgent <- na.omit(newgent)
 ```
 
 
 ```{r}
-model <- lm(black ~ collegewhite + income + homeprice + whitecollar + privateschool + moved + nodiploma + highschoolgrad + collegedegree + county + rural*homeprice, 
-                  data = newgent)
+gent_rural <- gentdata %>% 
+  group_by(geoid) %>% 
+  summarise(rural)
+
+
+manual <- inner_join(manual, gent_rural, copy=T)
+```
+
+
+##Omitting rows with NA because there are only 10
+
+```{r}
+manual <- na.omit(manual)
+```
+
+```{r}
+ggplot(data = manual, mapping = aes(x = black)) + 
+  geom_histogram()
+
+typeof(manual$black)
+(sd(manual$black))
+```
+##Using Logistic Regression
+
+```{r}
+manual <- manual %>% 
+  mutate(gent = case_when(black>(-6.765474) ~ 0, black<=(-6.765474) ~ 1))
+
+
+manual %>% 
+  count(gent) 
+
+typeof(manual$gent)
+```
+
+
+
+```{r}
+model <- glm(gent ~ collegewhite + whitecollar + privateschool + nodiploma + highschoolgrad + collegedegree + income_med + homeprice_med + early_late + moved, 
+                  data = manual, family=binomial)
 
 tidy(model, conf.int = TRUE) %>%
   kable(format = "markdown", digits = 5)
   
 ```
 
-
-```{r}
-newgent <- newgent %>%
-  mutate(residuals = resid(model))
-
-newgent <- newgent %>%
-  mutate(residuals = as.numeric(residuals))
-
-
+Using backward selection to find the optimal model
+```{r aic, results = "hide"}
+model_aic <- step(model, direction = "backward", conf.int=T)
+tidy(model_aic)
 ```
 
 ```{r}
-model_aug <- augment(model)
+model_aic <- glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med, data=manual, family= "binomial" )
+tidy(model_aic)
+```
+
+```{r}
+model_aic_full <- glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med + rural, data=manual, family= "binomial" )
+tidy(model_aic_full)
+```
+
+```{r}
+(dev_m <- glance(model_aic)$deviance)
+(dev_full <- glance(model_aic_full)$deviance)
+(test_stat <- dev_m - dev_full)
+```
+p-value:
+```{r}
+1- pchisq(test_stat, 1)
+```
+Since the chisq p-value for adding "Rural" to the model is less than .05, we reject the null hypothesis that "Rural" is not a significant predictor of whether or not
+
+
+```{r}
+model_aug <- augment(model_aic_full)
 glimpse(model_aug)
 ```
 
-#Bivariate analysis
+
+#Univariate analysis
+
 ```{r}
-ggplot(data = newgent, mapping = aes(x = privateschool, y = black)) + 
-  geom_point() + geom_smooth(method = lm)
-
-ggplot(data = newgent, mapping = aes(x = collegewhite, y = black)) + 
-  geom_point() + geom_smooth(method = lm)
-
-ggplot(data = newgent, mapping = aes(x = homeprice, y = black)) + 
-  geom_point() + geom_smooth(method = lm)
-
-ggplot(data = newgent, mapping = aes(x = income, y = black)) + 
-  geom_point() + geom_smooth(method = lm)
-
-ggplot(data = newgent, mapping = aes(x = moved, y = black)) + 
-  geom_point() + geom_smooth(method = lm)
-
-ggplot(data = newgent, mapping = aes(x = whitecollar, y = black)) + 
-  geom_point() + geom_smooth(method = lm)
-
-
-
-```
-
-#Univariate alaysis
-```{r}
-ggplot(data = newgent, mapping = aes(x = privateschool)) + 
+ggplot(data = manual, mapping = aes(x = privateschool)) + 
   geom_histogram()
 
-ggplot(data = newgent, mapping = aes(x = collegewhite)) + 
+ggplot(data = manual, mapping = aes(x = collegewhite)) + 
   geom_histogram()
 
-ggplot(data = newgent, mapping = aes(x = homeprice)) + 
+ggplot(data = manual, mapping = aes(x = homeprice_med)) + 
   geom_histogram()
 
-ggplot(data = newgent, mapping = aes(x = income)) + 
+ggplot(data = manual, mapping = aes(x = income_med)) + 
   geom_histogram()
 
-ggplot(data = newgent, mapping = aes(x = moved)) + 
+ggplot(data = manual, mapping = aes(x = moved)) + 
   geom_histogram()
 ```
 
@@ -152,40 +206,26 @@ ggplot(data = model_aug, aes(x = .fitted, y = .resid)) +
   geom_point(alpha = 0.3) + 
   geom_hline(yintercept = 0, color = "red")
 
-ggplot(data = newgent, mapping = aes(x = residuals)) + 
-  geom_histogram()
-
-ggplot(data = newgent, mapping = aes(sample = residuals)) + 
-  stat_qq() + 
-  stat_qq_line()
+##not how we are supposed to do it for logistic regression
 ```
 
 ```{r}
-ggplot(data = model_aug, aes(x = privateschool, y = .resid)) +
-  geom_point(alpha = 0.3) + 
-  geom_hline(yintercept = 0, color = "red") + 
-               labs(x="Private School", y="residuals", title="Private School vs Residuals")
+
 
 ggplot(data = model_aug, aes(x = collegewhite, y = .resid)) +
   geom_point(alpha = 0.3) + 
   geom_hline(yintercept = 0, color = "red") + 
                labs(x="College-educated white population", y="residuals", title="College-educated whites vs Residuals")
 
-ggplot(data = model_aug, aes(x = black, y = .resid)) +
-  geom_point(alpha = 0.3) + 
-  geom_hline(yintercept = 0, color = "red") + 
-               labs(x="black population", y="residuals", title="Black population vs Residuals")
 
 
-ggplot(data = model_aug, aes(x = homeprice, y = .resid)) +
+
+ggplot(data = model_aug, aes(x = homeprice_med, y = .resid)) +
   geom_point(alpha = 0.3) + 
   geom_hline(yintercept = 0, color = "red") + 
                labs(x="homeprice", y="residuals", title="Home price vs Residuals")
 
-ggplot(data = model_aug, aes(x = income, y = .resid)) +
-  geom_point(alpha = 0.3) + 
-  geom_hline(yintercept = 0, color = "red") + 
-               labs(x="homeprice", y="residuals", title="Income vs Residuals")
+
 ```
 
 
