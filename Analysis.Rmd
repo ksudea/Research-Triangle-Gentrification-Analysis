@@ -169,7 +169,7 @@ In part I, the following research question will be examined:
 
 Where in the Research Triangle (counties including Durham, Wake, Orange and Chatham) is gentrification occurring the most?
 
-Recoding our response variable to "0" if change in black population is <= "-6.765" or one standard deviation below the mean and equal to "1" if >  "6.765" in order visualize and eventually create a logistic model:
+Recoding our response variable to "1" if change in black population is <= "-6.765" or one standard deviation below the mean and equal to "0" if >  "6.765" in order visualize and eventually create a logistic model:
 
 ```{r}
 manual <- manual %>% 
@@ -185,6 +185,7 @@ typeof(manual$gent)
 ```
 
 Reading in spatial data
+
 ```{r}
 # read the shapefile
 shape <- read_sf(dsn = "data", layer = "triangletracts")
@@ -264,13 +265,74 @@ Therefore we will continue with this full model for the remained of our analysis
 
 ###Assumptions 
 
-Linearity
+In order to use the full model with the predictor variables collegewhite, whitecollar, nodiploma, highschoolgrad, homeprice_med, and rural, we must first test how well this model satisfies assumptions. 
+
+For testing linearity, we will augment the model with predicted probabilities and residuals in order to examine binned residual plots for predicted probability and numeric variables. 
+
+```{r}
+model_aug <- augment(model_aic_full, type.predict = "response", type.residuals = "response")
+
+model_aug
+```
+
+```{r}
+arm::binnedplot(x = model_aug$.fitted, 
+                y = model_aug$.resid, 
+                col.int = FALSE,
+                xlab = "Predicted probabilities", 
+                main = "Binned Residual vs. Predicted Probability")
+
+arm::binnedplot(x = model_aug$collegewhite, 
+                y = model_aug$.resid, 
+                col.int = FALSE,
+                xlab = "collegewhite", 
+                main = "Binned Residual vs. collegewhite")
+
+arm::binnedplot(x = model_aug$whitecollar, 
+                y = model_aug$.resid, 
+                col.int = FALSE,
+                xlab = "whitecollar", 
+                main = "Binned Residual vs. whitecollar")
+
+arm::binnedplot(x = model_aug$nodiploma, 
+                y = model_aug$.resid, 
+                col.int = FALSE,
+                xlab = "nodiploma", 
+                main = "Binned Residual vs. nodiploma")
+
+arm::binnedplot(x = model_aug$highschoolgrad, 
+                y = model_aug$.resid, 
+                col.int = FALSE,
+                xlab = "highschoolgrad", 
+                main = "Binned Residual vs. highschoolgrad")
+
+arm::binnedplot(x = model_aug$homeprice_med, 
+                y = model_aug$.resid, 
+                col.int = FALSE,
+                xlab = "homeprice_med", 
+                main = "Binned Residual vs. homeprice_med")
+
+model_aug %>%
+  group_by(rural) %>%
+  summarise(mean_resid = mean(.resid))
+
+```
+
+The linearity assumption is satisfied. The binned residuals vs. predicted probability plot shows irregularity with a very slight clustering of residual values below 0.0. The binned residuals vs. collegewhite plot shows irregularity. The binned residuals vs. whitecollar plot shows irregularity, with a slight clustering of residual values below 0.0 and a slight increase in residual values as you move right. The binned residuals vs. nodiploma, binned residuals vs. highschoolgrad, and binned residuals vs. homeprice_med show complete irregularity. For the predictor variable rural, which has two categories rural and urban, both mean residuals are very close to zero. There is no strong indication of nonlinearity; therefore, we can assume that there is a linear relationship between log(gent) and the predictor variables.
+
+To discuss randomness and independence, we must go back to the source of our data. All of the data we are using is sourced from the Census Bureau's annual American Community Survey and official North Carolina demographic data. According to the census sampling techniques and methodology, we can reasonably assume that randomness and independence are satisfied. Read more here: https://www.census.gov/programs-surveys/sipp/methodology.html
+
+### Interpreting Model Coefficients
+
+Now that we've confirmed that it satisfies assumptions, let's take a look at our chosen logistic model again: 
+```{r}
+tidy(model_aic_full, conf.int = TRUE, exponentiate = FALSE) %>%
+  kable(digits = 3, format = "markdown")
 
 
-Randomness
+```
 
-
-Independence 
+We would like to discuss the variables that have the most impact on the response variable gent. Therefore, we will discuss variables with p-values of <0.05. The variable collegewhite seems to have a reliably strong impact on gent: holding all other variables constant, a unit change in collewhite causes the odds of gentrification are expected to multiply by a factor of exp(0.089) = 1.093. However, this impact is not as strong as that of the rural variable. According to the model coefficient for the term ruralUrban, holding all other variables constant, the odds of gentrification for an urban area is expected to be 2.55 that of a rural locale. We would like to suggest that the change in college-educated whites in a county and urban character likely greatly impact "gentrification" as we have classified it (a significant decrease in black population). 
 
 
 
