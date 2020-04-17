@@ -1,6 +1,6 @@
 ---
-title: "Analysis"
-author: "Ryan Goodman"
+title: "Data Analysis"
+author: "Apache Juntion Armchairs: Ellie, Ryan, Sude and Darren"
 date: "3/5/2020"
 output: "html_document"
 ---
@@ -9,7 +9,7 @@ output: "html_document"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
+## Load packages
 
 ```{r}
 library(tidyverse)
@@ -18,6 +18,7 @@ library(broom)
 library(ggplot2)
 library(openintro)
 library(nnet)
+library(patchwork)
 library(pROC)
 library(plotROC)
 library(psych)
@@ -28,68 +29,42 @@ library(spatialreg)
 library(spdep)
 ```
 
+## Loading and Manipulating the Data
 
 ```{r}
 gentdata <- read_csv("data/gentdata.csv", col_names = TRUE, col_types = cols())
-```
 
-
-```{r}
-manual <- read_csv("data/ImportR.csv", col_names = TRUE, col_types = cols())
-```
-
-```{r}
-manual <- manual %>% 
-  mutate(black = 100*(black17/total17 - black10/total10))
+manual <- read_csv("ImportR.csv", col_names = TRUE, col_types = cols())
 
 manual <- manual %>% 
-  mutate(collegewhite = 100*(collegewhite17/total17 - collegewhite10/total10))
-
-manual <- manual %>% 
-  mutate(nodiploma = 100*(nodiploma17/total17 - nodiploma10/total10))
-
-manual <- manual %>% 
-  mutate(highschoolgrad = 100*(highschoolgrad17/total17 - highschoolgrad10/total10))
-
-manual <- manual %>% 
-  mutate(collegedegree = 100*(collegedegree17/total17 - collegedegree10/total10))
-
-manual <- manual %>% 
-  mutate(collegedegree = 100*(collegedegree17/total17 - collegedegree10/total10))
-
-manual <- manual %>% 
-  mutate(early_late = 100*(early_late17/employed17 - early_late10/employed10))
-
-manual <- manual %>% 
+  mutate(black = 100*(black17/total17 - black10/total10)) %>%
+  mutate(collegewhite = 100*(collegewhite17/total17 - collegewhite10/total10)) %>%
+  mutate(nodiploma = 100*(nodiploma17/total17 - nodiploma10/total10)) %>%
+  mutate(highschoolgrad = 100*(highschoolgrad17/total17 - highschoolgrad10/total10)) %>%
+  mutate(collegedegree = 100*(collegedegree17/total17 - collegedegree10/total10)) %>%
+  mutate(collegedegree = 100*(collegedegree17/total17 - collegedegree10/total10)) %>%
+  mutate(early_late = 100*(early_late17/employed17 - early_late10/employed10)) %>%
   mutate(privateschool = 100*(privateschool17/totalpop17 - privateschool10/totalpop10))
 ```
 
+Mutating new variables to demonstrate change over time:
 ```{r}
 manual <- manual %>% 
   mutate(moved17=as.numeric(moved17)) %>% 
-  mutate(moved10=as.numeric(moved10))
-
-manual <- manual %>% 
-  mutate(moved = moved17-moved10)
-
-manual <- manual %>% 
+  mutate(moved10=as.numeric(moved10)) %>%
+  mutate(moved = moved17-moved10) %>%
   mutate(homeprice17=as.numeric(homeprice17)) %>% 
-  mutate(homeprice10=as.numeric(homeprice10))
-
-manual <- manual %>% 
-  mutate(homeprice_med = (homeprice17 - homeprice10))
-
-manual <- manual %>% 
+  mutate(homeprice10=as.numeric(homeprice10)) %>%
+  mutate(homeprice_med = (homeprice17 - homeprice10)) %>%
   mutate(income2017=as.numeric(income2017)) %>% 
-  mutate(income2010=as.numeric(income2010))
-
-manual <- manual %>% 
+  mutate(income2010=as.numeric(income2010)) %>%
   mutate(income_med = (income2017 - income2010))
 
 names(manual)[1] <- "geoid"
 
 ```
 
+Recoding variables to be numeric:
 ```{r}
 manual <- manual %>% 
   mutate(income_med=as.numeric(income)) %>% 
@@ -104,23 +79,40 @@ manual <- manual %>%
   mutate(privateschool=as.numeric(privateschool))
 ```
 
-
+Joining data sets:
 ```{r}
 gent_rural <- gentdata %>% 
   group_by(geoid) %>% 
   summarise(rural)
 
-
 manual <- inner_join(manual, gent_rural, copy=T)
 ```
 
-
-##Omitting rows with NA because there are only 10
-
+manually imputing the mean value for homeprice
 ```{r}
-manual <- na.omit(manual)
+mean_homeprice <- manual %>%
+  summarise(mean = mean(homeprice_med, na.rm = T)) %>%
+  pull()
+
+manual <- manual %>%
+  mutate(homeprice_med = if_else(is.na(homeprice_med), mean_homeprice, homeprice_med))
+
+mean_income <- manual %>%
+  summarise(mean = mean(income_med, na.rm = T)) %>%
+  pull()
+
+manual <- manual %>%
+  mutate(income_med = if_else(is.na(income_med), mean_income, income_med))
+
 ```
 
+### EXPLORATORY DATA ANALYSIS
+
+#Univariate analysis
+
+The variable "black" is the change in black population from 2010 to 2017. We will use this variable as our response to predict whether gentrification is occurring in a region in the research triangle. 
+
+The distribution of change in Black population:
 ```{r}
 ggplot(data = manual, mapping = aes(x = black)) + 
   geom_histogram()
@@ -128,12 +120,63 @@ ggplot(data = manual, mapping = aes(x = black)) +
 typeof(manual$black)
 (sd(manual$black))
 ```
-##Using Logistic Regression
+std deviation is =  6.765474
+
+More Univariate EDA: 
+```{r}
+p1 <- ggplot(data = manual, mapping = aes(x = privateschool)) + 
+  geom_histogram()
+
+p2 <-ggplot(data = manual, mapping = aes(x = collegewhite)) + 
+  geom_histogram()
+
+p3 <-ggplot(data = manual, mapping = aes(x = homeprice_med)) + 
+  geom_histogram()
+
+p4 <-ggplot(data = manual, mapping = aes(x = income_med)) + 
+  geom_histogram()
+
+p5 <-ggplot(data = manual, mapping = aes(x = moved)) + 
+  geom_histogram()
+
+p1 + p3 + p2 + p4 +p5
+```
+
+Bivariate EDA: 
+
+```{r}
+p6 <- ggplot(data = manual, mapping = aes(x = black, y = privateschool)) + 
+  geom_boxplot()
+
+p7 <- ggplot(data = manual, mapping = aes(x = black, y = collegewhite)) + 
+  geom_boxplot()
+
+p8 <- ggplot(data = manual, mapping = aes(x = black, y = moved)) + 
+  geom_boxplot()
+
+p9 <- ggplot(data = manual, mapping = aes(x = black, y = income_med)) + 
+  geom_boxplot()
+
+p10 <- ggplot(data = manual, mapping = aes(x = black, y = homeprice_med)) + 
+  geom_boxplot()
+
+p6 + p7 + p8 + p9 + p10
+```
+
+###Part I: Location of Gentrification
+
+In part I, the following research question will be examined:
+
+Where in the Research Triangle (counties including Durham, Wake, Orange and Chatham) is gentrification occurring the most?
+
+Recoding our response variable to "0" if change in black population is <= "-6.765" or one standard deviation below the mean and equal to "1" if >  "6.765" in order visualize and eventually create a logistic model:
 
 ```{r}
 manual <- manual %>% 
   mutate(gent = case_when(black>(-6.765474) ~ 0, black<=(-6.765474) ~ 1))
 
+manual <- manual %>%
+  mutate(gent = if_else(is.na(gent), 0, gent))
 
 manual %>% 
   count(gent) 
@@ -141,33 +184,71 @@ manual %>%
 typeof(manual$gent)
 ```
 
+Reading in spatial data
+```{r}
+# read the shapefile
+shape <- read_sf(dsn = "data", layer = "triangletracts")
+
+# convert RegionID to numeric before we join anddrop some columns that we don't need
+shape <- shape %>%
+  mutate(geoid = as.character(AFFGEOID)) 
+# merge keeping only those in both data sets
+
+merged <- inner_join(shape, manual, by = "geoid")
+```
+
+Plotting research triangle area:
+```{r}
+ggplot(data = merged) +
+  geom_sf()
+```
 
 
+Plotting research triangle area by which regions have experienced gentrification:
+```{r}
+ggplot(data = merged, aes(fill = gent)) +
+  geom_sf() +
+  labs(title = "Research Triangle", 
+       subtitle = "Gentrification by census tract") +
+  theme_void() +
+  scale_fill_distiller(palette = 'RdBu', guide = "legend")
+```
+
+###Part 2: Factors Associated with Gentrification
+
+In part 2, the following research question will be examined:
+
+What factors are associated with and the strongest predictors of the gentrification of these areas.
+
+We already determined a model using aic and drop in deviance tests ....
+
+##Using Logistic Regression
+
+Creating the logistic model using mutated variable "gent" as our response variable. :
 ```{r}
 model <- glm(gent ~ collegewhite + whitecollar + privateschool + nodiploma + highschoolgrad + collegedegree + income_med + homeprice_med + early_late + moved, 
-                  data = manual, family=binomial)
+                  data = manual, family="binomial")
 
 tidy(model, conf.int = TRUE) %>%
   kable(format = "markdown", digits = 5)
   
 ```
 
-Using backward selection to find the optimal model
-```{r aic, results = "hide"}
-model_aic <- step(model, direction = "backward", conf.int=T)
-tidy(model_aic)
-```
+Using backward selection to find the optimal model:
 
 ```{r}
-model_aic <- glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med, data=manual, family= "binomial" )
-tidy(model_aic)
+model_aic <- step(model, direction = "backward", conf.int=T)
+tidy(model_aic, conf.int = TRUE) %>%
+  kable(format = "markdown", digits = 5)
 ```
 
+Creating a full model to determine if we should add "rural" to the model: 
 ```{r}
 model_aic_full <- glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med + rural, data=manual, family= "binomial" )
 tidy(model_aic_full)
 ```
 
+Drop in deviance test:
 ```{r}
 (dev_m <- glance(model_aic)$deviance)
 (dev_full <- glance(model_aic_full)$deviance)
@@ -177,61 +258,19 @@ p-value:
 ```{r}
 1- pchisq(test_stat, 1)
 ```
-Since the chisq p-value for adding "Rural" to the model is less than .05, we reject the null hypothesis that "Rural" is not a significant predictor of whether or not
+Since the chisq p-value for adding "Rural" to the model is less than .05, we reject the null hypothesis that "Rural" is not a significant predictor of whether or not a region has experienced gentrification.
+
+Therefore we will continue with this full model for the remained of our analysis.
+
+###Assumptions 
+
+Linearity
 
 
-```{r}
-model_aug <- augment(model_aic_full)
-glimpse(model_aug)
-```
+Randomness
 
 
-#Univariate analysis
-
-```{r}
-ggplot(data = manual, mapping = aes(x = privateschool)) + 
-  geom_histogram()
-
-ggplot(data = manual, mapping = aes(x = collegewhite)) + 
-  geom_histogram()
-
-ggplot(data = manual, mapping = aes(x = homeprice_med)) + 
-  geom_histogram()
-
-ggplot(data = manual, mapping = aes(x = income_med)) + 
-  geom_histogram()
-
-ggplot(data = manual, mapping = aes(x = moved)) + 
-  geom_histogram()
-```
-
-
-```{r}
-ggplot(data = model_aug, aes(x = .fitted, y = .resid)) +
-  geom_point(alpha = 0.3) + 
-  geom_hline(yintercept = 0, color = "red")
-
-##not how we are supposed to do it for logistic regression
-```
-
-```{r}
-
-
-ggplot(data = model_aug, aes(x = collegewhite, y = .resid)) +
-  geom_point(alpha = 0.3) + 
-  geom_hline(yintercept = 0, color = "red") + 
-               labs(x="College-educated white population", y="residuals", title="College-educated whites vs Residuals")
-
-
-
-
-ggplot(data = model_aug, aes(x = homeprice_med, y = .resid)) +
-  geom_point(alpha = 0.3) + 
-  geom_hline(yintercept = 0, color = "red") + 
-               labs(x="homeprice", y="residuals", title="Home price vs Residuals")
-
-
-```
+Independence 
 
 
 
