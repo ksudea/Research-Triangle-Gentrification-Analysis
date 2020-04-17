@@ -21,6 +21,11 @@ library(nnet)
 library(pROC)
 library(plotROC)
 library(psych)
+library(RColorBrewer) #custom color palettes
+#wrangle and model spatial data
+library(sf)
+library(spatialreg)
+library(spdep)
 ```
 
 

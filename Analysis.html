@@ -374,11 +374,11 @@ $(document).ready(function () {
 
 
 <pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.2.1 ──</code></pre>
+<pre><code>## ── Attaching packages ──────────────────────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──</code></pre>
 <pre><code>## ✔ tibble  1.4.2     ✔ purrr   0.2.5
 ## ✔ tidyr   0.8.1     ✔ dplyr   0.7.6
 ## ✔ readr   1.1.1     ✔ forcats 0.3.0</code></pre>
-<pre><code>## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+<pre><code>## ── Conflicts ─────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ lubridate::as.difftime() masks base::as.difftime()
 ## ✖ lubridate::date()        masks base::date()
 ## ✖ dplyr::filter()          masks stats::filter()
@@ -412,6 +412,61 @@ library(pROC)</code></pre>
 <pre><code>## The following objects are masked from 'package:ggplot2':
 ## 
 ##     %+%, alpha</code></pre>
+<pre class="r"><code>library(RColorBrewer) #custom color palettes
+#wrangle and model spatial data
+library(sf)</code></pre>
+<pre><code>## Linking to GEOS 3.5.1, GDAL 2.2.2, proj.4 4.9.2</code></pre>
+<pre class="r"><code>library(spatialreg)</code></pre>
+<pre><code>## Loading required package: spData</code></pre>
+<pre><code>## To access larger datasets in this package, install the spDataLarge
+## package with: `install.packages('spDataLarge',
+## repos='https://nowosad.github.io/drat/', type='source'))`</code></pre>
+<pre><code>## 
+## Attaching package: 'spData'</code></pre>
+<pre><code>## The following object is masked from 'package:openintro':
+## 
+##     house</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## 
+## Attaching package: 'Matrix'</code></pre>
+<pre><code>## The following object is masked from 'package:tidyr':
+## 
+##     expand</code></pre>
+<pre class="r"><code>library(spdep)</code></pre>
+<pre><code>## Loading required package: sp</code></pre>
+<pre><code>## 
+## Attaching package: 'spdep'</code></pre>
+<pre><code>## The following objects are masked from 'package:spatialreg':
+## 
+##     GMargminImage, GMerrorsar, HPDinterval.lagImpact,
+##     Hausman.test, Jacobian_W, LR.sarlm, LR1.sarlm, LR1.spautolm,
+##     LU_prepermutate_setup, LU_setup, MCMCsamp, ME, Matrix_J_setup,
+##     Matrix_setup, SE_classic_setup, SE_interp_setup,
+##     SE_whichMin_setup, SpatialFiltering, Wald1.sarlm, anova.sarlm,
+##     as.spam.listw, as_dgRMatrix_listw, as_dsCMatrix_I,
+##     as_dsCMatrix_IrW, as_dsTMatrix_listw, bptest.sarlm,
+##     can.be.simmed, cheb_setup, coef.gmsar, coef.sarlm,
+##     coef.spautolm, coef.stsls, create_WX, deviance.gmsar,
+##     deviance.sarlm, deviance.spautolm, deviance.stsls, do_ldet,
+##     eigen_pre_setup, eigen_setup, eigenw, errorsarlm,
+##     fitted.ME_res, fitted.SFResult, fitted.gmsar, fitted.sarlm,
+##     fitted.spautolm, get.ClusterOption, get.VerboseOption,
+##     get.ZeroPolicyOption, get.coresOption, get.mcOption,
+##     griffith_sone, gstsls, impacts, intImpacts, jacobianSetup,
+##     l_max, lagmess, lagsarlm, lextrB, lextrS, lextrW, lmSLX,
+##     logLik.sarlm, logLik.spautolm, mcdet_setup, mom_calc,
+##     mom_calc_int2, moments_setup, powerWeights, predict.SLX,
+##     predict.sarlm, print.ME_res, print.SFResult, print.gmsar,
+##     print.sarlm, print.sarlm.pred, print.spautolm, print.stsls,
+##     print.summary.gmsar, print.summary.sarlm,
+##     print.summary.spautolm, print.summary.stsls, residuals.gmsar,
+##     residuals.sarlm, residuals.spautolm, residuals.stsls,
+##     sacsarlm, set.ClusterOption, set.VerboseOption,
+##     set.ZeroPolicyOption, set.coresOption, set.mcOption,
+##     similar.listw, spBreg_lag, spam_setup, spam_update_setup,
+##     spautolm, stsls, subgraph_eigenw, summary.gmsar,
+##     summary.sarlm, summary.spautolm, summary.stsls, trW,
+##     vcov.sarlm</code></pre>
 <pre class="r"><code>gentdata &lt;- read_csv(&quot;data/gentdata.csv&quot;, col_names = TRUE, col_types = cols())</code></pre>
 <pre class="r"><code>manual &lt;- read_csv(&quot;data/ImportR.csv&quot;, col_names = TRUE, col_types = cols())</code></pre>
 <pre class="r"><code>manual &lt;- manual %&gt;% 
