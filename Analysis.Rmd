@@ -35,6 +35,8 @@ library(sf)
 library(spatialreg)
 library(spdep)
 library(anchors)
+library(viridis)
+library(RColorBrewer)
 ```
 
 ## Loading and Manipulating the Data
@@ -261,7 +263,7 @@ ggplot(data = merged, aes(fill = gent)) +
   labs(title = "Research Triangle", 
        subtitle = "Gentrification by census tract") +
   theme_void() +
-  scale_fill_distiller(palette = 'RdBu', guide = "legend")
+  scale_fill_distiller(palette = 'GnBu', guide = "legend", n="Gentrified", direction=1, type="qual")
 ```
 
 #Plotting urban areas by census tract:
@@ -284,9 +286,28 @@ ggplot(data = merged, aes(fill = rural)) +
   labs(title = "Research Triangle", 
        subtitle = "Urban areas by census tract") +
   theme_void() +
-  scale_fill_distiller(palette = 'RdBu', guide = "legend")
+  scale_fill_distiller(palette = '', guide = "legend", direction=1)
 ```
 By comparing the locations of gentrified tracts to urban areas, we can see that almost all gentrified tracts are in urban areas. Moreover, many of the gentrified tracts appear to be in and around city centers. This makes sense--we tend to think of gentrification as affecting highly urbanized downtown areas.
+
+
+```{r}
+shapeurban <- read_sf(dsn = "data", layer = "triangleurban")
+```
+
+```{r}
+st_crs(shape)
+st_crs(shapeurban)
+```
+
+```{r}
+shapeurban_aea <- st_transform(shapeurban, st_crs(shape))
+
+range(st_coordinates(shapeurban))
+
+range(st_coordinates(shapeurban_aea))
+
+```
 
 ###Part 2: Factors Associated with Gentrification
 
