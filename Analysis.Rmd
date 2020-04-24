@@ -292,13 +292,10 @@ By comparing the locations of gentrified tracts to urban areas, we can see that 
 
 
 ```{r}
-shapeurban <- read_sf(dsn = "data", layer = "triangleurban")
+shapeurban <- read_sf(dsn = "data", layer = "MunicipalBoundaries")
 ```
 
-```{r}
-st_crs(shape)
-st_crs(shapeurban)
-```
+
 
 ```{r}
 shapeurban_aea <- st_transform(shapeurban, st_crs(shape))
@@ -307,7 +304,49 @@ range(st_coordinates(shapeurban))
 
 range(st_coordinates(shapeurban_aea))
 
+
+st_crs(shape)
+st_crs(shapeurban_aea)
 ```
+
+```{r}
+st_centroid(shapeurban_aea)
+
+cities <- cbind(shapeurban_aea$MunicipalB, st_coordinates(st_centroid(shapeurban_aea)))
+head(cities)
+
+cities<- as.data.frame(cities)
+
+cities <- cities %>% 
+  mutate(MunicipalB=as.character(V1))
+
+withtext <- inner_join(shapeurban_aea, cities, by="MunicipalB")
+
+```
+
+```{r}
+ggplot(data = merged) +
+  geom_sf()+
+  geom_sf(data=withtext) +
+  geom_text(data = withtext, mapping=aes(X, Y, label = MunicipalB), size = 100) +
+  coord_sf(xlim = c(-79.6, -78.2), ylim = c(35.4, 36.3), expand = FALSE)
+```
+```{r}
+ggplot(data = withtext) +
+  geom_sf() +
+  geom_label(data = withtext, mapping=aes(X, Y, label = MunicipalB)) +
+  coord_sf(xlim = c(-79.6, -78.2), ylim = c(35.4, 36.3), expand = FALSE)
+```
+
+
+```{r}
+library("maps")
+states <- st_as_sf(map("state", plot = FALSE, fill = TRUE))
+head(states)
+
+```
+
+
 
 ###Part 2: Factors Associated with Gentrification
 
