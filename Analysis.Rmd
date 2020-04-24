@@ -331,11 +331,13 @@ ggplot(data = merged) +
   geom_text(data = withtext, mapping=aes(X, Y, label = MunicipalB), size = 100) +
   coord_sf(xlim = c(-79.6, -78.2), ylim = c(35.4, 36.3), expand = FALSE)
 ```
+
 ```{r}
-ggplot(data = withtext) +
+ggplot(data = merged) +
   geom_sf() +
-  geom_label(data = withtext, mapping=aes(X, Y, label = MunicipalB)) +
+  geom_text(data = cities, aes(X, Y, label = V1), size = 10)+
   coord_sf(xlim = c(-79.6, -78.2), ylim = c(35.4, 36.3), expand = FALSE)
+
 ```
 
 
