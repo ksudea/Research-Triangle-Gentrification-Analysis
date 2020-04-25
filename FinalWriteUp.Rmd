@@ -52,6 +52,7 @@ library(spdep)
 library(anchors)
 library(viridis)
 library(RColorBrewer)
+library("ggrepel")
 ```
 
 ```{r}
@@ -191,14 +192,29 @@ merged <- inner_join(shape, manual, by = "geoid") %>%
 Plotting research triangle area (counties: Chatham, Durham, Orange and Wake):
 We will be looking only at this region and conducting our analysis of the census tracts shown below
 
+
+```{r}
+shapeurban <- read_sf(dsn = "data", layer = "MunicipalBoundaries")
+
+shapeurban_aea <- st_transform(shapeurban, st_crs(shape))
+
+cities <- cbind(shapeurban_aea, st_coordinates(st_centroid(shapeurban_aea)))
+
+cities<- as.data.frame(cities)
+```
+
 ```{r}
 ggplot(data = merged) +
   geom_sf() +
   labs(title = "Research Triangle", 
-       x = "Longitude", y = "Latitude")
+       x = "Longitude", y = "Latitude") +
+  geom_text_repel(data = cities, aes(x = X, y = Y, label = MunicipalB), 
+        fontface = "bold", nudge_x = c(1, -1.5, 2, 2, -1), nudge_y = c(0.25, 
+            0.25, 0.5, 0.5, 0.5))
 
 
 ```
+
 
 
 Next we want to visualize which regions in the research triangle area have experienced gentrification:
@@ -209,7 +225,7 @@ ggplot(data = merged, aes(fill = gent)) +
   labs(title = "Research Triangle", 
        subtitle = "Gentrification by census tract") +
   theme_void() +
-  scale_fill_distiller(palette = 'GnBu', guide = "legend", n="Gentrified", direction=1, type="qual")
+  scale_fill_distiller(palette = 'GnBu', guide = "legend", n="Gentrified", direction=1, type="qual") 
 ```
 
 The census tracts shown above in blue are classified as gentrified and those that are yellow are not. 
