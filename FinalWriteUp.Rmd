@@ -103,7 +103,6 @@ gent_rural <- gentdata %>%
 manual <- inner_join(manual, gent_rural, by="geoid")
 ```
 
-manually imputing the mean value for homeprice and income, and setting Na values of PP change variables to zero.
 
 ```{r}
 mean_homeprice <- manual %>%
@@ -132,7 +131,8 @@ manual <- replace.value(manual,c("black","collegewhite","nodiploma","highschoolg
 
 The distribution of change in Black population:
 
-In order to assess whether gentrification is taking place in an area we looked at the change in the Black population. First we looked at the distribution of change in Black population to determine an appropriate threshold.
+In order to assess whether gentrification is taking place in an area we looked at the change in the Black population. 
+First we looked at the distribution of change in Black population to determine an appropriate threshold.
 
 ```{r}
 ggplot(data = manual, mapping = aes(x = black)) + 
@@ -196,6 +196,8 @@ ggplot(data = merged) +
   geom_sf() +
   labs(title = "Research Triangle", 
        x = "Longitude", y = "Latitude")
+
+
 ```
 
 
@@ -210,20 +212,21 @@ ggplot(data = merged, aes(fill = gent)) +
   scale_fill_distiller(palette = 'GnBu', guide = "legend", n="Gentrified", direction=1, type="qual")
 ```
 
-We can see that the census tracts show above in blue are classified as gentrified and those that are yellow are not. 
+The census tracts shown above in blue are classified as gentrified and those that are yellow are not. 
 
-We hypothesized that whether a census tract is in an urban or rural area would impact whether that region had also experienced gentrification. In order to determine urban vs rural impact on gentrification, we recoded the variable "rural" to be equal to 1
+We hypothesized that whether a census tract is in an urban or rural area would impact whether that region had also experienced gentrification. In order to determine urban vs rural impact on gentrification, we recoded the variable "rural" to be equal to "1" if the census tract is considered to be rural and "0" if the census tract is in an urban area.
 
 ```{r}
 merged <- merged %>% 
     mutate(rural = recode(rural, 
-                      "Rural" = "0", 
-                      "Urban" = "1"))
+                      "Rural" = "1", 
+                      "Urban" = "0"))
 merged <- merged %>% 
   mutate(rural=as.character(rural)) %>% 
   mutate(rural=as.numeric(rural))
 ```
 
+Next, we want to visualize which regions in the research triangle area are considered urban/rural:
 
 ```{r}
 ggplot(data = merged, aes(fill = rural)) +
@@ -237,16 +240,13 @@ ggplot(data = merged, aes(fill = rural)) +
 By comparing the locations of gentrified tracts to urban areas, we can see that almost all gentrified tracts are in urban areas. Moreover, many of the gentrified tracts appear to be in and around city centers. This makes sense--we tend to think of gentrification as affecting highly urbanized downtown areas.
 
 
-```{r}
-shapeurban <- read_sf(dsn = "data", layer = "MunicipalBoundaries")
-```
 
 
 
 
 
 
-ryans mapping stuff
+
 
 
 
@@ -260,11 +260,8 @@ In part 2, the following research question will be examined:
 
 What factors are associated with and what are the strongest predictors of the gentrification of these areas?
 
-We already determined a model using aic and drop in deviance tests ....
 
-##Using Logistic Regression
-
-Creating the logistic model using mutated variable "gent" as our response variable:
+In order to predict where gentrification is taking place we again looked at the change in the Black population. We use the catagorical variable created in part one above, "gent" where a "1" is coded for census tracts that we classify as gentrified and "0" for census tracts which have not been gentrified. Since gent is a catagorical variable with 2 outcomes we fit a logistic model.
 
 ```{r}
 model <- glm(gent ~ collegewhite + whitecollar + privateschool + nodiploma + highschoolgrad + collegedegree + income_med + homeprice_med + early_late + moved, 
@@ -274,7 +271,7 @@ tidy(model, conf.int = TRUE) %>%
   
 ```
 
-Using backward selection to find the optimal model:
+Next we use backward selection to find the optimal model because not every variable is significant.
 
 ```{r}
 model_aic <- step(model, direction = "backward", conf.int=T)
@@ -282,14 +279,25 @@ tidy(model_aic, conf.int = TRUE) %>%
   kable(format = "markdown", digits = 5)
 ```
 
-Creating a full model to determine if we should add "rural" to the model: 
+Logistic model predicting gentrification:
+
+`log(pi_hat/(1-pi_hat)) = -2.2308 + (0.1084)*(collegewhite) - (0.0569)*(whitecollar) + (0.1347)*(nodiploma) + (0.0694)*(highschoolgrad) + (0.00001)*(homeprice_med)`
+
+We originally hypothesized that whether a census tract is in an urban or rural area would impact whether that region had also experienced gentrification. In order to determine urban vs rural impact we visualized where the gentrified areas were and compared to the map of urban vs. rural regions. In the visualizations, many of the gentrified tracts appeared to be in and around city centers. Now, we want to determine if the variable "rural" is significant and should be added to our model.
+
+
+We create a full model that includes "rural" and conduct a drop in deviance test to determine if we should add "rural" to the model: 
+
+The null hypothesis is that the coefficient for rural does not add significant information to our model. The alternative hypothesis is that the coefficient for rural does add significant information to our model.
+
+H0: B_rural = 0 
+HA: B_rural != 0 
 
 ```{r}
 model_aic_full <- glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med + rural, data=manual, family= "binomial" )
 tidy(model_aic_full)
 ```
 
-Drop in deviance test:
 
 ```{r}
 (dev_m <- glance(model_aic)$deviance)
@@ -297,62 +305,40 @@ Drop in deviance test:
 (test_stat <- dev_m - dev_full)
 ```
 
-p-value:
-
 ```{r}
 1- pchisq(test_stat, 1)
 ```
 
+The drop in deviance test has a test statistic of 4.014 and a p-value of 0.0451.
+
 Since the chisq p-value for adding "Rural" to the model is less than .05, we reject the null hypothesis that "Rural" is not a significant predictor of whether or not a region has experienced gentrification.
 
-Therefore we will continue with this full model for the remained of our analysis.
+Therefore we will continue with this full model for the remainder of our analysis.
+
+
+k-fold-->
 
 
 
-
-
-Checking multicollinearity
+In order to avoid collinearity of response variables we want to confirm that no two variables are highly correlated with one another. 
+We do so by checking multicollinearity and looking for variables with high VIF (Variance Inflation Factor).
 
 ```{r}
 library(rms) 
 tidy(vif(model_aic_full))
 ```
 
-
-
-```{r}
-model_aug <- augment(model_aic_full, type.predict = "response", type.residuals = "response")
-model_aug <- model_aug %>%
-    mutate(.rownames=as.numeric(.rownames))
-model_aug_merged <- inner_join(merged, model_aug, by = ".rownames")
-```
-
-heat map of residuals for independence
-
-```{r}
-ggplot(data = model_aug_merged, aes(fill = .resid)) +
-  geom_sf() +
-  labs(title = "Research Triangle", 
-       subtitle = "Heat Map of Residuals") +
-  theme_void() +
-  scale_fill_distiller(palette = "BuPu" , guide = "legend")
-```
-
-
-
-
-
-
-
-
-
+Since the VIF for all of our variables is relatively low and none even come close to 10+, we can be confident that 
+multicollinearity is not a problem in our model and none of the variables are highly correlated with one another.
 
 
 ###Assumptions 
 
-In order to use the full model with the predictor variables collegewhite, whitecollar, nodiploma, highschoolgrad, homeprice_med, and rural, we must first test how well this model satisfies assumptions. 
+In order to use the full model with the predictor variables collegewhite, whitecollar, nodiploma, highschoolgrad, 
+homeprice_med, and rural, we must first test how well this model satisfies assumptions. 
 
-For testing linearity, we will augment the model with predicted probabilities and residuals in order to examine binned residual plots for predicted probability and numeric variables. 
+For testing linearity, we will augment the model with predicted probabilities and residuals in order to examine 
+binned residual plots for predicted probability and numeric variables. 
 
 ```{r}
 model_aug <- augment(model_aic_full, type.predict = "response", type.residuals = "response")
@@ -397,9 +383,27 @@ model_aug %>%
 
 The linearity assumption is satisfied. The binned residuals vs. predicted probability plot shows irregularity with a very slight clustering of residual values below 0.0. The binned residuals vs. collegewhite plot shows irregularity. The binned residuals vs. whitecollar plot shows irregularity, with a slight clustering of residual values below 0.0 and a slight increase in residual values as you move right. The binned residuals vs. nodiploma, binned residuals vs. highschoolgrad, and binned residuals vs. homeprice_med show complete irregularity. For the predictor variable rural, which has two categories rural and urban, both mean residuals are very close to zero. There is no strong indication of nonlinearity; therefore, we can assume that there is a linear relationship between log(gent) and the predictor variables.
 
-To discuss randomness and independence, we must go back to the source of our data. All of the data we are using is sourced from the Census Bureau's annual American Community Survey and official North Carolina demographic data. According to the census sampling techniques and methodology, we can reasonably assume that randomness and independence are satisfied. Read more here: https://www.census.gov/programs-surveys/sipp/methodology.html
+We created a heat map of residuals to examine the independence assumption:
 
-### Interpreting Model Coefficients
+```{r}
+model_aug <- model_aug %>%
+    mutate(.rownames=as.numeric(.rownames))
+model_aug_merged <- inner_join(merged, model_aug, by = ".rownames")
+```
+
+```{r}
+ggplot(data = model_aug_merged, aes(fill = .resid)) +
+  geom_sf() +
+  labs(title = "Research Triangle", 
+       subtitle = "Heat Map of Residuals") +
+  theme_void() +
+  scale_fill_distiller(palette = "BuPu" , guide = "legend")
+```
+
+
+need to change--> To discuss randomness and independence, we must go back to the source of our data. All of the data we are using is sourced from the Census Bureau's annual American Community Survey and official North Carolina demographic data. According to the census sampling techniques and methodology, we can reasonably assume that randomness and independence are satisfied. Read more here: https://www.census.gov/programs-surveys/sipp/methodology.html
+
+### Section 3: Discussion
 
 Now that we've confirmed that it satisfies assumptions, let's take a look at our chosen logistic model again: 
 
@@ -408,7 +412,35 @@ tidy(model_aic_full, conf.int = TRUE, exponentiate = FALSE) %>%
   kable(digits = 3, format = "markdown")
 ```
 
+`log(pi_hat/(1-pi_hat)) = -2.877 + (0.094)*(collegewhite) - (0.055)*(whitecollar) + (0.118)*(nodiploma) + (0.061)*(highschoolgrad) + (0.00001)*(homeprice_med) + (0.891)*(ruralUrban)`
+
+
 We would like to discuss the variables that have the most impact on the response variable gent. Therefore, we will discuss variables with p-values of <0.05. The variable collegewhite seems to have a reliably strong impact on gent: holding all other variables constant, with a unit change in collegewhite, the odds of gentrification are expected to multiply by a factor of exp(0.089) = 1.093. However, this impact is not as strong as that of the rural variable. According to the model coefficient for the term ruralUrban, holding all other variables constant, the odds of gentrification for an urban area is expected to be 2.55 that of a rural locale. We would like to suggest that the change in college-educated whites in a county and urban character likely greatly impact "gentrification" as we have classified it (a significant decrease in black population). 
+
+
+Creating a Receiver Operating Characteristic (ROC) curve:
+
+```{r}
+(roc_curve <- ggplot(model_aug,
+                     aes(d = as.numeric(gent) - 1,
+                         m = .fitted)) +
+  geom_roc(n.cuts = 10, labelround = 3) +
+  geom_abline(intercept = 0) +
+  labs(title = "Receiver Operating Characteristic (ROC) curve", 
+       x = "False Positive Rate (1 - Specificity)",
+       y = "True Positive Rate (Sensitivity)") )
+```
+
+
+```{r}
+calc_auc(roc_curve)$AUC
+```
+
+Since our AUC 0.742 we can see that the logistic model fits the data fairly well.
+
+There are potential consequences of misclassifying an area as gentrified or not gentrified that we have to consider. If we erroneously classify an area as not gentrified, we could miss an opportunity to control the effects of gentrification and we risk letting growth have far-reaching cultural consequences. It we call an area gentrified, somebody will likely conduct further research on the area before making any policy decisions, so the risk of false-positive classification is not very high.
+
+The Apache Junction Armchairs, being socially responsible policymakers, are more worried about falsely classifying an area as not gentrified than we are about falsely classifying an area as gentrified. The social costs are higher in the former scenario, so we are going to pick a gentrification probability threshold that reflects these priorities.
 
 ### Section 4: Limitations
 
@@ -419,7 +451,7 @@ We would like to discuss the variables that have the most impact on the response
 ### Section 6: Additional Work
 
 
-More Univariate EDA: 
+Univariate EDA 
 
 ```{r}
 p1 <- ggplot(data = manual, mapping = aes(x = privateschool)) + 
