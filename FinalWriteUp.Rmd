@@ -16,7 +16,7 @@ options(tinytex.verbose = TRUE)
 suppressMessages(library("tidyverse"))
 ```
 
-Section 1: Introduction
+### Section 1: Introduction
 
 
 
@@ -31,7 +31,7 @@ Section 1: Introduction
 
 
 
-Section 2: Regression Analysis:
+### Section 2: Regression Analysis:
 
 ```{r}
 library(tidyverse)
@@ -56,9 +56,7 @@ library(RColorBrewer)
 
 ```{r}
 gentdata <- read_csv("data/gentdata.csv", col_names = TRUE, col_types = cols())
-
 manual <- read_csv("ImportR.csv", col_names = TRUE, col_types = cols())
-
 manual <- manual %>% 
   mutate(black = 100*(black17/total17 - black10/total10)) %>%
   mutate(collegewhite = 100*(collegewhite17/total17 - collegewhite10/total10)) %>%
@@ -81,9 +79,7 @@ manual <- manual %>%
   mutate(income2017=as.numeric(income2017)) %>% 
   mutate(income2010=as.numeric(income2010)) %>%
   mutate(income_med = (income2017 - income2010))
-
 names(manual)[1] <- "geoid"
-
 ```
 
 ```{r}
@@ -104,7 +100,6 @@ manual <- manual %>%
 gent_rural <- gentdata %>% 
   group_by(geoid) %>% 
   summarise(rural)
-
 manual <- inner_join(manual, gent_rural, by="geoid")
 ```
 
@@ -114,123 +109,55 @@ manually imputing the mean value for homeprice and income, and setting Na values
 mean_homeprice <- manual %>%
   summarise(mean = mean(homeprice_med, na.rm = T)) %>%
   pull()
-
 manual <- manual %>%
   mutate(homeprice_med = if_else(is.na(homeprice_med), mean_homeprice, homeprice_med))
-
 mean_income <- manual %>%
   summarise(mean = mean(income_med, na.rm = T)) %>%
   pull()
-
 manual <- manual %>%
   mutate(income_med = if_else(is.na(income_med), mean_income, income_med))
-
-
 mean_income <- manual %>%
   summarise(mean = mean(income_med, na.rm = T)) %>%
   pull()
-
 manual <- manual %>%
   mutate(income_med = if_else(is.na(income_med), mean_income, income_med))
-
 manual <- manual %>%
   mutate(moved = if_else(is.na(moved), 0, moved))
 
 manual <- replace.value(manual,c("black","collegewhite","nodiploma","highschoolgrad","collegedegree","privateschool", "early_late", "moved"), "NaN", as.double(0))
 
-```
 
-### EXPLORATORY DATA ANALYSIS
+```
 
 
 The distribution of change in Black population:
 
+In order to assess whether gentrification is taking place in an area we looked at the change in the Black population. First we looked at the distribution of change in Black population to determine an appropriate threshold.
+
 ```{r}
 ggplot(data = manual, mapping = aes(x = black)) + 
   geom_histogram()
-
 (sd(manual$black))
 ```
 
-std deviation is =  6.765474. We will use this value (-6.765474) as the threshold to determine if gentrification has occurred in a census tract. If a tract has experienced more than a -6.765 PP change in the Black population, we will consider that census tract "gentrified." Even though the mean is not exactly at 0, it is close enough that we feel one standard deviation away from 0 is a sufficient threshold for gentrification.
+std deviation is =  6.88333. We will use this value (-6.88333) as the threshold to determine if gentrification has occurred in a census tract. If a tract has experienced more than a -6.88333 PP change in the Black population, we will consider that census tract "gentrified." Even though the mean is not exactly at 0, it is close enough that we feel one standard deviation away from 0 is a sufficient threshold for gentrification.
+
+Next, we create a new variable "gent" to represent whether a census tract is gentrified or not. As described above, ff a census tract have less than or equal to -6.88333 percent change in Black population then we classify the region as gentrified and the variable gent will be "1" otherwise the region will not be classified as gentrified and gent will be "0".
 
 ```{r}
 manual <- manual %>% 
-  mutate(gent = case_when(black>(-6.765474) ~ 0, black<=(-6.765474) ~ 1))
+  mutate(gent = case_when(black>(-6.88333) ~ 0, black<=(-6.88333) ~ 1))
 
 manual <- manual %>%
   mutate(gent = if_else(is.na(gent), 0, gent))
-
 manual %>% 
   count(gent) 
 ```
 
-More Univariate EDA: 
-
-```{r}
-p1 <- ggplot(data = manual, mapping = aes(x = privateschool)) + 
-  geom_histogram()
-
-p2 <-ggplot(data = manual, mapping = aes(x = collegewhite)) + 
-  geom_histogram()
-
-p3 <-ggplot(data = manual, mapping = aes(x = homeprice_med)) + 
-  geom_histogram()
-
-p4 <-ggplot(data = manual, mapping = aes(x = income_med)) + 
-  geom_histogram()
-
-p5 <-ggplot(data = manual, mapping = aes(x = moved)) + 
-  geom_histogram()
-
-p11 <-ggplot(data = manual, mapping = aes(x = nodiploma)) + 
-  geom_histogram()
-
-p12 <-ggplot(data = manual, mapping = aes(x = highschoolgrad)) + 
-  geom_histogram()
-
-p13 <-ggplot(data = manual, mapping = aes(x = collegedegree)) + 
-  geom_histogram()
-
-p1 + p3 + p2 + p4
-p5 + p11 + p12 + p13
-```
-
-Each predictor variable is normally distributed around 0.
+In our data set we have 246 observations that are not considered gentrified and 42 that are.
 
 
-Bivariate EDA: 
-
-```{r}
-p6 <- ggplot(data = manual, mapping = aes(x = gent, y = privateschool)) + 
-  geom_boxplot()
-
-p7 <- ggplot(data = manual, mapping = aes(x = gent, y = collegewhite)) + 
-  geom_boxplot()
-
-p8 <- ggplot(data = manual, mapping = aes(x = gent, y = moved)) + 
-  geom_boxplot()
-
-p9 <- ggplot(data = manual, mapping = aes(x = gent, y = income_med)) + 
-  geom_boxplot()
-
-p10 <- ggplot(data = manual, mapping = aes(x = gent, y = homeprice_med)) + 
-  geom_boxplot()
-
-p14 <- ggplot(data = manual, mapping = aes(x = gent, y = nodiploma)) + 
-  geom_boxplot()
-
-p15 <- ggplot(data = manual, mapping = aes(x = gent, y = highschoolgrad)) + 
-  geom_boxplot()
-
-p16 <- ggplot(data = manual, mapping = aes(x = gent, y = collegedegree)) + 
-  geom_boxplot()
-
-p6 + p7 + p8 + p9
-p10 + p14 + p15 + p16
-```
-
-The relationship between the response variable "gent" and the predictor variables are all each roughly normal.
+After examining the Univariate and Bi-variate EDA (located in section 6) we proceeded with our analysis without any additional transformations because each predictor variable is normally distributed around 0 and the relationship between the response variable "gent" and the predictor variables are all each roughly normal.
 
 
 ###Part I: Location of Gentrification
@@ -244,37 +171,35 @@ Recoding our response variable to "1" if change in black population is <= "-6.76
 ```{r}
 manual <- manual %>% 
   mutate(gent = case_when(black>(-6.765474) ~ 0, black<=(-6.765474) ~ 1))
-
 manual <- manual %>%
   mutate(gent = if_else(is.na(gent), 0, gent))
-
 manual %>% 
   count(gent) 
-
 ```
 
-Reading in spatial data
+In order to determine the locations of gentrification we use spatial data to conduct our analysis:
 
 ```{r}
 shape <- read_sf(dsn = "data", layer = "triangletracts")
-
 shape <- shape %>%
   mutate(geoid = as.character(AFFGEOID)) 
-
 merged <- inner_join(shape, manual, by = "geoid") %>%
   mutate(.rownames = 1:n())
 ```
 
 
-Plotting research triangle area:
+Plotting research triangle area (counties: Chatham, Durham, Orange and Wake):
+We will be looking only at this region and conducting our analysis of the census tracts shown below
 
 ```{r}
 ggplot(data = merged) +
-  geom_sf()
+  geom_sf() +
+  labs(title = "Research Triangle", 
+       x = "Longitude", y = "Latitude")
 ```
 
 
-Plotting research triangle area by which regions have experienced gentrification:
+Next we want to visualize which regions in the research triangle area have experienced gentrification:
 
 ```{r}
 ggplot(data = merged, aes(fill = gent)) +
@@ -285,9 +210,9 @@ ggplot(data = merged, aes(fill = gent)) +
   scale_fill_distiller(palette = 'GnBu', guide = "legend", n="Gentrified", direction=1, type="qual")
 ```
 
-#Plotting urban areas by census tract:
+We can see that the census tracts show above in blue are classified as gentrified and those that are yellow are not. 
 
-Converting "rural" into a binary variable.
+We hypothesized that whether a census tract is in an urban or rural area would impact whether that region had also experienced gentrification. In order to determine urban vs rural impact on gentrification, we recoded the variable "rural" to be equal to 1
 
 ```{r}
 merged <- merged %>% 
@@ -344,7 +269,6 @@ Creating the logistic model using mutated variable "gent" as our response variab
 ```{r}
 model <- glm(gent ~ collegewhite + whitecollar + privateschool + nodiploma + highschoolgrad + collegedegree + income_med + homeprice_med + early_late + moved, 
                   data = manual, family="binomial")
-
 tidy(model, conf.int = TRUE) %>%
   kable(format = "markdown", digits = 5)
   
@@ -398,12 +322,9 @@ tidy(vif(model_aic_full))
 
 ```{r}
 model_aug <- augment(model_aic_full, type.predict = "response", type.residuals = "response")
-
 model_aug <- model_aug %>%
     mutate(.rownames=as.numeric(.rownames))
-
 model_aug_merged <- inner_join(merged, model_aug, by = ".rownames")
-
 ```
 
 heat map of residuals for independence
@@ -435,7 +356,6 @@ For testing linearity, we will augment the model with predicted probabilities an
 
 ```{r}
 model_aug <- augment(model_aic_full, type.predict = "response", type.residuals = "response")
-
 model_aug
 ```
 
@@ -445,41 +365,34 @@ arm::binnedplot(x = model_aug$.fitted,
                 col.int = FALSE,
                 xlab = "Predicted probabilities", 
                 main = "Binned Residual vs. Predicted Probability")
-
 arm::binnedplot(x = model_aug$collegewhite, 
                 y = model_aug$.resid, 
                 col.int = FALSE,
                 xlab = "collegewhite", 
                 main = "Binned Residual vs. collegewhite")
-
 arm::binnedplot(x = model_aug$whitecollar, 
                 y = model_aug$.resid, 
                 col.int = FALSE,
                 xlab = "whitecollar", 
                 main = "Binned Residual vs. whitecollar")
-
 arm::binnedplot(x = model_aug$nodiploma, 
                 y = model_aug$.resid, 
                 col.int = FALSE,
                 xlab = "nodiploma", 
                 main = "Binned Residual vs. nodiploma")
-
 arm::binnedplot(x = model_aug$highschoolgrad, 
                 y = model_aug$.resid, 
                 col.int = FALSE,
                 xlab = "highschoolgrad", 
                 main = "Binned Residual vs. highschoolgrad")
-
 arm::binnedplot(x = model_aug$homeprice_med, 
                 y = model_aug$.resid, 
                 col.int = FALSE,
                 xlab = "homeprice_med", 
                 main = "Binned Residual vs. homeprice_med")
-
 model_aug %>%
   group_by(rural) %>%
   summarise(mean_resid = mean(.resid))
-
 ```
 
 The linearity assumption is satisfied. The binned residuals vs. predicted probability plot shows irregularity with a very slight clustering of residual values below 0.0. The binned residuals vs. collegewhite plot shows irregularity. The binned residuals vs. whitecollar plot shows irregularity, with a slight clustering of residual values below 0.0 and a slight increase in residual values as you move right. The binned residuals vs. nodiploma, binned residuals vs. highschoolgrad, and binned residuals vs. homeprice_med show complete irregularity. For the predictor variable rural, which has two categories rural and urban, both mean residuals are very close to zero. There is no strong indication of nonlinearity; therefore, we can assume that there is a linear relationship between log(gent) and the predictor variables.
@@ -493,10 +406,66 @@ Now that we've confirmed that it satisfies assumptions, let's take a look at our
 ```{r}
 tidy(model_aic_full, conf.int = TRUE, exponentiate = FALSE) %>%
   kable(digits = 3, format = "markdown")
-
-
 ```
 
 We would like to discuss the variables that have the most impact on the response variable gent. Therefore, we will discuss variables with p-values of <0.05. The variable collegewhite seems to have a reliably strong impact on gent: holding all other variables constant, with a unit change in collegewhite, the odds of gentrification are expected to multiply by a factor of exp(0.089) = 1.093. However, this impact is not as strong as that of the rural variable. According to the model coefficient for the term ruralUrban, holding all other variables constant, the odds of gentrification for an urban area is expected to be 2.55 that of a rural locale. We would like to suggest that the change in college-educated whites in a county and urban character likely greatly impact "gentrification" as we have classified it (a significant decrease in black population). 
 
+### Section 4: Limitations
 
+
+### Section 5: Conclusion
+
+
+### Section 6: Additional Work
+
+
+More Univariate EDA: 
+
+```{r}
+p1 <- ggplot(data = manual, mapping = aes(x = privateschool)) + 
+  geom_histogram()
+p2 <-ggplot(data = manual, mapping = aes(x = collegewhite)) + 
+  geom_histogram()
+p3 <-ggplot(data = manual, mapping = aes(x = homeprice_med)) + 
+  geom_histogram()
+p4 <-ggplot(data = manual, mapping = aes(x = income_med)) + 
+  geom_histogram()
+p5 <-ggplot(data = manual, mapping = aes(x = moved)) + 
+  geom_histogram()
+p11 <-ggplot(data = manual, mapping = aes(x = nodiploma)) + 
+  geom_histogram()
+p12 <-ggplot(data = manual, mapping = aes(x = highschoolgrad)) + 
+  geom_histogram()
+p13 <-ggplot(data = manual, mapping = aes(x = collegedegree)) + 
+  geom_histogram()
+p1 + p3 + p2 + p4
+p5 + p11 + p12 + p13
+```
+
+Each predictor variable is normally distributed around 0.
+
+
+Bivariate EDA: 
+
+```{r}
+p6 <- ggplot(data = manual, mapping = aes(x = gent, y = privateschool)) + 
+  geom_boxplot()
+p7 <- ggplot(data = manual, mapping = aes(x = gent, y = collegewhite)) + 
+  geom_boxplot()
+p8 <- ggplot(data = manual, mapping = aes(x = gent, y = moved)) + 
+  geom_boxplot()
+p9 <- ggplot(data = manual, mapping = aes(x = gent, y = income_med)) + 
+  geom_boxplot()
+p10 <- ggplot(data = manual, mapping = aes(x = gent, y = homeprice_med)) + 
+  geom_boxplot()
+p14 <- ggplot(data = manual, mapping = aes(x = gent, y = nodiploma)) + 
+  geom_boxplot()
+p15 <- ggplot(data = manual, mapping = aes(x = gent, y = highschoolgrad)) + 
+  geom_boxplot()
+p16 <- ggplot(data = manual, mapping = aes(x = gent, y = collegedegree)) + 
+  geom_boxplot()
+p6 + p7 + p8 + p9
+p10 + p14 + p15 + p16
+```
+
+The relationship between the response variable "gent" and the predictor variables are all each roughly normal.
