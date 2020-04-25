@@ -53,6 +53,7 @@ library(anchors)
 library(viridis)
 library(RColorBrewer)
 library("ggrepel")
+library(modelr)
 ```
 
 ```{r}
@@ -192,8 +193,9 @@ merged <- inner_join(shape, manual, by = "geoid") %>%
 Plotting research triangle area (counties: Chatham, Durham, Orange and Wake):
 We will be looking only at this region and conducting our analysis of the census tracts shown below
 
+I coulnt knit--> make sure to make code chunck again!!!
 
-```{r}
+``{r}
 shapeurban <- read_sf(dsn = "data", layer = "MunicipalBoundaries")
 
 shapeurban_aea <- st_transform(shapeurban, st_crs(shape))
@@ -203,7 +205,7 @@ cities <- cbind(shapeurban_aea, st_coordinates(st_centroid(shapeurban_aea)))
 cities<- as.data.frame(cities)
 ```
 
-```{r}
+``{r}
 ggplot(data = merged) +
   geom_sf() +
   labs(title = "Research Triangle", 
@@ -254,8 +256,6 @@ ggplot(data = merged, aes(fill = rural)) +
 ```
 
 By comparing the locations of gentrified tracts to urban areas, we can see that almost all gentrified tracts are in urban areas. Moreover, many of the gentrified tracts appear to be in and around city centers. This makes sense--we tend to think of gentrification as affecting highly urbanized downtown areas.
-
-
 
 
 
@@ -332,12 +332,68 @@ Since the chisq p-value for adding "Rural" to the model is less than .05, we rej
 Therefore we will continue with this full model for the remainder of our analysis.
 
 
-k-fold-->
+Now that we have determined Rural is a significant predictor variable, we consider adding interaction terms with rural to our model. We use k-fold cross validation to determine if we should add the interactions homeprice_med*rural and collegewhite*rural. We start by looking at the 5-fold cross validation results for the model above using the predictors: collegewhite, whitecollar, nodiploma, highschoolgrad, homeprice_med and rural. We fit a model on each training set and calcualte the testing error. Next, we repeat the same process using the predictors: collegewhite, whitecollar, nodiploma, highschoolgrad, homeprice_med, rural, and our new interaction terms,homeprice_med*rural and collegewhite*rural.
 
 
+```{r}
+set.seed(04012019)
+ad_cv <- crossv_kfold(manual, 5)
 
-In order to avoid collinearity of response variables we want to confirm that no two variables are highly correlated with one another. 
-We do so by checking multicollinearity and looking for variables with high VIF (Variance Inflation Factor).
+models <- map(ad_cv$train, 
+              ~ glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med + rural, data=manual, family= "binomial"))
+```
+
+```{r}
+train_mse <- map2_dbl(models, ad_cv$train, mse)
+test_mse <- map2_dbl(models, ad_cv$test, mse)
+
+mse_ad <- tibble(
+  test_fold  = 1:5,
+  train_mse, 
+  test_mse
+)
+
+mse_ad %>%
+  summarise(mean_train_mse = mean(train_mse), 
+           mean_test_mse = mean(test_mse))
+
+```
+
+
+```{r}
+set.seed(04012019)
+ad_cv_2 <- crossv_kfold(manual, 5)
+
+models_2 <- map(ad_cv_2$train, 
+              ~ glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med + rural + homeprice_med*rural + collegewhite*rural,  data=manual, family= "binomial"))
+```
+
+```{r}
+train_mse_2 <- map2_dbl(models_2, ad_cv_2$train, mse)
+test_mse_2 <- map2_dbl(models_2, ad_cv_2$test, mse)
+
+mse_ad_2 <- tibble(
+  test_fold  = 1:5,
+  train_mse_2, 
+  test_mse_2
+)
+
+mse_ad_2 %>%
+  summarise(mean_train_mse = mean(train_mse_2), 
+           mean_test_mse = mean(test_mse_2))
+
+```
+
+Finally we compared the estimated testing error for both models:
+
+Model 1 (excluding interaction terms): 5.369539
+Model 2 (including interaction terms): homeprice_med*rural and collegewhite*rural: 5.671572
+
+Although the testing errors are very close, Model 1 performs better than Model 2 when predicting if a census tract is gentrified. Therefore, we will continue with the model that does not include the interaction terms.
+
+~~~~~~~~~~~
+
+In order to avoid collinearity of response variables we want to confirm that no two variables are highly correlated with one another. We do so by checking multicollinearity and looking for variables with high VIF (Variance Inflation Factor).
 
 ```{r}
 library(rms) 
