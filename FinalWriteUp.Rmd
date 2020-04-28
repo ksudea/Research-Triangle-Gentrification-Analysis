@@ -271,8 +271,10 @@ tidy(model, conf.int = TRUE) %>%
 It is clear that not every variable is a significant predictor of gentrification, so we next use backward selection, with AIC criterion, to find a reduced, optimal model.
 
 
-```{r model}
+```{r model, results='hide'}
 model_aic <- step(model, direction = "backward", conf.int=T)
+```
+```{r}
 tidy(model_aic, conf.int = TRUE) %>%
   kable(format = "markdown", digits = 5)
 ```
