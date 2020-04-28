@@ -4,8 +4,8 @@ author: "Apache Juntion Armchairs: Ellie, Ryan, Sude and Darren"
 date: "4/20/2020"
 output: 
   pdf_document:
-    fig_width: 6
-    fig_height: 4
+    fig_width: 5
+    fig_height: 3
 ---
 
 ```{r setup, include=FALSE}
@@ -271,7 +271,7 @@ tidy(model, conf.int = TRUE) %>%
 It is clear that not every variable is a significant predictor of gentrification, so we next use backward selection, with AIC criterion, to find a reduced, optimal model.
 
 
-```{r, message=FALSE}
+```{r model}
 model_aic <- step(model, direction = "backward", conf.int=T)
 tidy(model_aic, conf.int = TRUE) %>%
   kable(format = "markdown", digits = 5)
@@ -475,7 +475,7 @@ Gentrification is a complex phenomenon. While we focused specifically on the cha
 
 Univariate EDA 
 
-```{r}
+```{r plot1, fig.height = 5, fig.width = 7}
 p1 <- ggplot(data = manual, mapping = aes(x = privateschool)) + 
   geom_histogram()
 p2 <-ggplot(data = manual, mapping = aes(x = collegewhite)) + 
@@ -500,7 +500,7 @@ Each predictor variable is normally distributed around 0.
 
 Bivariate EDA: 
 
-```{r}
+```{r plot2, fig.height = 5, fig.width = 7}
 p6 <- ggplot(data = manual, mapping = aes(x = gent, y = privateschool)) + 
   geom_boxplot()
 p7 <- ggplot(data = manual, mapping = aes(x = gent, y = collegewhite)) + 
@@ -535,7 +535,7 @@ model_aug <- augment(model_aic_full, type.predict = "response", type.residuals =
 model_aug
 ```
 
-```{r}
+```{r plot3, fig.height = 5, fig.width = 7}
 par(mfrow = c(2,3))
 arm::binnedplot(x = model_aug$.fitted, 
                 y = model_aug$.resid, 
