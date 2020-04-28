@@ -26,10 +26,8 @@ We hypothesize that census tracts in which there is an increase in college educa
 
 We put together a dataset of relevant variables from The Census Bureau's annual American Community Survey, which conducts a wide range of demographic surveys that covers almost everything a decennial census covers. The data can be found here: https://factfinder.census.gov/faces/nav/jsf/pages/index.xhtml.
 
-All of our demographic data is framed in terms of percentage point change from 2010-2017. By measuring our variables in percentage point changes, we are making our variable more robust to population changes in the years between 2010-2017. We are more focused on the proportion of demographic changes, as opposed to changes of a particular demographic group in a vacuum. Our "metadata" file explains what each variable is actually measuring. Median home price and median household income are the only two variables measured in monetary terms, as opposed to PP change
+All of our demographic data is framed in terms of percentage point change from 2010-2017. By measuring our variables in percentage point changes, we are making our variable more robust to population changes in the years between 2010-2017. We are more focused on the proportion of demographic changes, as opposed to changes of a particular demographic group in a vacuum. Our "metadata" file explains what each variable is actually measuring. Median home price and median household income are the only two variables measured in monetary terms, as opposed to PP change.
 
-
-### Section 2: Regression Analysis:
 
 ```{r}
 library(tidyverse)
@@ -128,7 +126,6 @@ manual <- replace.value(manual,c("black","collegewhite","nodiploma","highschoolg
 
 ```
 
-
 As we began our analysis we explored each of the variables in our data set in order to get a better sense of univariate and bivariate distributions in the data. Most importantly, in order to assess whether gentrification is taking place in an area we looked at the change in the Black population because we would use this change as our response to determine if the census tract was considered gentrified or not.
 
 Here the distribution of change in Black population is shown, we use this distribution to determine an appropriate threshold for gentrification.
@@ -155,6 +152,7 @@ In our data set we have 244 observations that are not considered gentrified and 
 
 After examining the rest of the Univariate and Bi-variate EDA (located in section 6) we proceeded with our analysis without any additional transformations because each predictor variable is normally distributed around 0 and the relationship between the response variable "gent" and the predictor variables are all each roughly normal.
 
+### Section 2: Regression Analysis:
 
 ### Part I: Location of Gentrification
 
