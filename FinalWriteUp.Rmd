@@ -1,5 +1,5 @@
 ---
-title: "FinalWriteUp"
+title: "Final Write-Up"
 author: "Apache Juntion Armchairs: Ellie, Ryan, Sude and Darren"
 date: "4/20/2020"
 output: 
@@ -18,17 +18,14 @@ suppressMessages(library("tidyverse"))
 
 ### Section 1: Introduction
 
+In the past 10 years, development in the Research Triangle area has skyrocketed, and the face of downtown has changed drastically. Alongside the rapid growth, gentrification has become a major issue in the region. This 2018 New York Times article sums up the changes in Durham well: "What has been largely overlooked is the cultural displacement that can accompany rapid urban change: the sense that home is not home anymore, at least for a portion of the population" (https://nyti.ms/2VyxTfs). Where black and brown people are being pushed out, they are being replaced by white homeowners in different tax brackets. A 2019 New York Times article describes the type of demographic replacement that is occuring: “In South Park, a neighborhood with picturesque views of the Raleigh skyline, the white home buyers who have recently moved in have average incomes more than three times that of the typical household already here” (https://nyti.ms/2zuVPb). Higher incomes, higher home prices, and more white-collar workers tend to be associated with this kind of demographic change. Our research captures what factors lead to the displacement of the black population in the Research Triangle.
+	Our analysis focuses on the percentage point change between 2010 and 2017 in several demographic characteristics for census tracts in Chatham, Durham, Orange, and Wake counties. We look at the college educated white population, the population of several different education levels, the percentage of white collar workers, the median income, median home price, the percentage of children in private school, among other variables. The response variable is a binary variable that categorizes census tracts as either “gentrified” or “not gentrified,” based on the percentage point change in the black population. The distribution of the percentage point changes in the black population across all census tracts (omitting any NAs in the dataset) is 6.76. The mean is very close to zero, so we have decided to classify a census tract as “gentrified” if its decline in black population is greater than 6.76 percentage points.
 
+We hypothesize that census tracts in which there is an increase in college educated whites, an increase in median household price and an increase in the amount of people who obtain a bachelor degree or higher will correspond to a decrease in Black population. In addition to exploring the mechanisms behind this displacement, we are interested in investigating where this displacement occurs. We want to be able to pinpoint the neighborhoods with the highest rate of incoming college-educated white people and the highest rate of Black exodus.
 
+We put together a dataset of relevant variables from The Census Bureau's annual American Community Survey, which conducts a wide range of demographic surveys that covers almost everything a decennial census covers. The data can be found here: https://factfinder.census.gov/faces/nav/jsf/pages/index.xhtml.
 
-
-
-
-
-
-
-
-
+All of our demographic data is framed in terms of percentage point change from 2010-2017. By measuring our variables in percentage point changes, we are making our variable more robust to population changes in the years between 2010-2017. We are more focused on the proportion of demographic changes, as opposed to changes of a particular demographic group in a vacuum. Our "metadata" file explains what each variable is actually measuring. Median home price and median household income are the only two variables measured in monetary terms, as opposed to PP change
 
 
 ### Section 2: Regression Analysis:
@@ -512,12 +509,18 @@ Since our AUC 0.742 we can see that the logistic model fits the data fairly well
 
 There are potential consequences of misclassifying an area as gentrified or not gentrified that we have to consider. If we erroneously classify an area as not gentrified, we could miss an opportunity to control the effects of gentrification and we risk letting growth have far-reaching cultural consequences. It we call an area gentrified, somebody will likely conduct further research on the area before making any policy decisions, so the risk of false-positive classification is not very high.
 
-The Apache Junction Armchairs, being socially responsible policymakers, are more worried about falsely classifying an area as not gentrified than we are about falsely classifying an area as gentrified. The social costs are higher in the former scenario, so we are going to pick a gentrification probability threshold that reflects these priorities.
+The Apache Junction Armchairs, being socially responsible policymakers, are more worried about falsely classifying an area as not gentrified than we are about falsely classifying an area as gentrified. The social costs are higher in the former scenario, so we are going to pick a gentrification probability threshold that reflects these priorities. We used the ROC curve to determine a threshold of 0.143 which will prioritize sensitivity when determining if an area is gentrified or not gentrified.
 
 ### Section 4: Limitations
 
+The biggest limitation of our study is the definition of gentrification. Much prior research has been done on the subject, and many of those studies define gentrification as some combination of demographic characteristics and poverty rate. Our characterization of gentrification is hamstrung by the fact that it does not incorporate any economic factors. In addition, it would be helpful to analyze more variables. Gentrification is a process that incorporates a variety of different socioeconomic groups, so more racial and economic data would have been helpful for analyzing gentrification from a number of different angles. 
+	In addition, we turned ‘Black percentage point change’ into a logistic model by picking an arbitrary threshold for determining if a tract was gentrified or not based on a rough measure of the Standard Deviation. Since the average census tract (omitting NA’s) fell 6.76 PPs away from the mean of the distribution of “black” , which was roughly 0, we decided to convert any tract with a value “black” of less than or equal to 6.76 into a gentrified tract, and all others were not gentrified. This is not grounded in any social science research, but rather it is relative to the distribution. A more complete analysis would determine an appropriate threshold of gentrification based on some mixture of quantitative and qualitative research.
 
 ### Section 5: Conclusion
+
+Our study was motivated by two questions: where in the Research Triangle does displacement of black population occur, and which factors contribute to the displacement of the black population in the Research Triangle? The spatial data suggests a strong association between gentrification and urban character--most gentrified tracts were in urban locales, and many were also in city centers. We created a logistic model that used rural/urban classification and percentage change in college-educated whites, white-collar jobs, those with no diploma, those with just a high school education, and median home price to predict gentrification. From our hypothesis––that the change in college educated whites, median home price, and those with a bachelor degree would be the strongest predictors of gentrification––median home price change and proportional college-educated white change made it into our model. Classification as urban had the strongest impact on gentrification, which aligns with our spatial analysis. Overall, we conclude that the proportional change in college educated whites and an area’s character as urban or rural are the two strongest predictors of gentrification in the Research Triangle area. In other words, the displacement of the urban black population is associated with an influx of college-educated whites in those urban areas.
+Of all the variables we started with, three education-based variables––proportional change in college-educated whites, those with no high school diploma, and those with only a high school diploma–– made it into our final model. This is an interesting link––further research could be done on the relationship between gentrification and education at a variety of socioeconomic levels.
+	Gentrification is a complex phenomenon. While we focused specifically on the change in Black population to determine gentrification within our study, gentrification can impact a variety of different socioeconomic groups. For a more rigorous and complete understanding of demographic shifts and gentrification in the Research Triangle region or North Carolina at large, the different socioeconomic groups should be taken into consideration. It would be very productive to study the demographic shifts of the Hispanic population and low-income population at large (and by specific racial categories). Studying shifts in public housing projects and populations in the Research Triangle region would also be productive in gaining a more complete picture of gentrification. This would allow policymakers, non-governmental organizations, and other interested parties to understand and mitigate the impacts of gentrification on the local communities. 
 
 
 ### Section 6: Additional Work
