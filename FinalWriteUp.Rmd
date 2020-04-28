@@ -271,7 +271,7 @@ tidy(model, conf.int = TRUE) %>%
 It is clear that not every variable is a significant predictor of gentrification, so we next use backward selection, with AIC criterion, to find a reduced, optimal model.
 
 
-```{r}
+```{r, message=FALSE}
 model_aic <- step(model, direction = "backward", conf.int=T)
 tidy(model_aic, conf.int = TRUE) %>%
   kable(format = "markdown", digits = 5)
@@ -492,8 +492,9 @@ p12 <-ggplot(data = manual, mapping = aes(x = highschoolgrad)) +
   geom_histogram()
 p13 <-ggplot(data = manual, mapping = aes(x = collegedegree)) + 
   geom_histogram()
-p1 + p3 + p2 + p4
-p5 + p11 + p12 + p13
+p1 + p3 + p2
+p4 + p5 + p11 
+p12 + p13
 ```
 
 Each predictor variable is normally distributed around 0.
@@ -518,8 +519,9 @@ p15 <- ggplot(data = manual, mapping = aes(x = gent, y = highschoolgrad)) +
   geom_boxplot()
 p16 <- ggplot(data = manual, mapping = aes(x = gent, y = collegedegree)) + 
   geom_boxplot()
-p6 + p7 + p8 + p9
-p10 + p14 + p15 + p16
+p6 + p7 + p8
+p9 + p10 + p14
+p15 + p16
 ```
 
 The relationship between the response variable "gent" and the predictor variables are all each roughly normal.
