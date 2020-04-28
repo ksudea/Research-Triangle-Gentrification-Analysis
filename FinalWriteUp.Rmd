@@ -135,7 +135,8 @@ Here the distribution of change in Black population is shown, we use this distri
 
 ```{r}
 ggplot(data = manual, mapping = aes(x = black)) + 
-  geom_histogram()
+  geom_histogram() +
+  labs (title = "Distribution of Change in Black Population from 2010 to 2017", x = "Percentage Point change in Black Population", y = "Count")
 ```
 
 The standard deviation is =  6.765474. We will use this value (-6.765474) as the threshold to determine if gentrification has occurred in a census tract. If a tract has experienced more than a -6.765 PP change in the Black population, we will consider that census tract "gentrified." Even though the mean is not exactly at 0, it is close enough that we feel one standard deviation away from 0 is a sufficient threshold for gentrification.
@@ -155,7 +156,7 @@ In our data set we have 244 observations that are not considered gentrified and 
 After examining the rest of the Univariate and Bi-variate EDA (located in section 6) we proceeded with our analysis without any additional transformations because each predictor variable is normally distributed around 0 and the relationship between the response variable "gent" and the predictor variables are all each roughly normal.
 
 
-###Part I: Location of Gentrification
+### Part I: Location of Gentrification
 
 In part I, the following research question will be examined:
 
@@ -252,7 +253,7 @@ By comparing the locations of gentrified tracts to urban areas, we can see that 
 
 Now that we have a better sense of where gentrification is happening in thr research triangle, we would like to take a closer look at what factors are associated with this change.
 
-###Part 2: Factors Associated with Gentrification
+### Part 2: Factors Associated with Gentrification
 
 In part 2, the following research question will be examined:
 
@@ -385,7 +386,7 @@ tidy(vif(model_aic_full))
 Since the VIF for all of our variables is relatively low and none even come close to 10+, we can be confident that multicollinearity is not a problem in our model and none of the variables are highly correlated with one another.
 
 
-###Assumptions 
+### Assumptions 
 
 In order to use the full model with the predictor variables collegewhite, whitecollar, nodiploma, highschoolgrad, 
 homeprice_med, and rural, we must first test how well this model satisfies assumptions. A complete look at assumptions is present in section 6 (Additional work), for now we will just discuss the independence assumption.
@@ -479,21 +480,37 @@ Univariate EDA
 
 ```{r plot1, fig.height = 5, fig.width = 7}
 p1 <- ggplot(data = manual, mapping = aes(x = privateschool)) + 
-  geom_histogram()
+  geom_histogram() +
+  labs(title = "Distribution of Private School", 
+       x = "Private school", y = "Count")
 p2 <-ggplot(data = manual, mapping = aes(x = collegewhite)) + 
-  geom_histogram()
+  geom_histogram()+
+  labs(title = "Distribution of College White", 
+       x = "College White", y = "Count")
 p3 <-ggplot(data = manual, mapping = aes(x = homeprice_med)) + 
-  geom_histogram()
+  geom_histogram()+
+  labs(title = "Distribution of Home Price Median", 
+       x = "Home Price Median", y = "Count")
 p4 <-ggplot(data = manual, mapping = aes(x = income_med)) + 
-  geom_histogram()
+  geom_histogram()+
+  labs(title = "Distribution of Income median", 
+       x = "Income median", y = "Count")
 p5 <-ggplot(data = manual, mapping = aes(x = moved)) + 
-  geom_histogram()
+  geom_histogram()+
+  labs(title = "Distribution of Moved", 
+       x = "Moved", y = "Count")
 p11 <-ggplot(data = manual, mapping = aes(x = nodiploma)) + 
-  geom_histogram()
+  geom_histogram()+
+  labs(title = "Distribution of No Diploma", 
+       x = "No Diploma", y = "Count")
 p12 <-ggplot(data = manual, mapping = aes(x = highschoolgrad)) + 
-  geom_histogram()
+  geom_histogram()+
+  labs(title = "Distribution of Highschool Grad", 
+       x = "Highschool Grad", y = "Count")
 p13 <-ggplot(data = manual, mapping = aes(x = collegedegree)) + 
-  geom_histogram()
+  geom_histogram()+
+  labs(title = "Distribution of College Degree", 
+       x = "College Degree", y = "Count")
 (p1 + p3 + p2) / (p4 + p5 + p11) / (p12 + p13)
 ```
 
@@ -504,21 +521,41 @@ Bivariate EDA:
 
 ```{r plot2, fig.height = 5, fig.width = 7}
 p6 <- ggplot(data = manual, mapping = aes(x = gent, y = privateschool)) + 
-  geom_boxplot()
+  geom_boxplot() +
+  labs(title = "Distribution of Private School vs Gent", 
+       x = "Gent", y = "Private School")
+
 p7 <- ggplot(data = manual, mapping = aes(x = gent, y = collegewhite)) + 
-  geom_boxplot()
+  geom_boxplot()+
+  labs(title = "Distribution of College White vs Gent", 
+       x = "Gent", y = "College White")
+
 p8 <- ggplot(data = manual, mapping = aes(x = gent, y = moved)) + 
-  geom_boxplot()
+  geom_boxplot()+
+  labs(title = "Distribution of Moved vs Gent", 
+       x = "Gent", y = "Movedl")
 p9 <- ggplot(data = manual, mapping = aes(x = gent, y = income_med)) + 
-  geom_boxplot()
+  geom_boxplot()+
+  labs(title = "Distribution of Income Median vs Gent", 
+       x = "Gent", y = "HIncome Median")
 p10 <- ggplot(data = manual, mapping = aes(x = gent, y = homeprice_med)) + 
-  geom_boxplot()
+  geom_boxplot()  +
+  labs(title = "Distribution of Home Price Median vs Gent", 
+       x = "Gent", y = "Home Price Median")
+
 p14 <- ggplot(data = manual, mapping = aes(x = gent, y = nodiploma)) + 
-  geom_boxplot()
+  geom_boxplot() +
+  labs(title = "Distribution of No Diploma vs Gent", 
+       x = "Gent", y = "No Diploma")
 p15 <- ggplot(data = manual, mapping = aes(x = gent, y = highschoolgrad)) + 
-  geom_boxplot()
+  geom_boxplot() +
+  labs(title = "Distribution of Highschool Grad vs Gent", 
+       x = "Gent", y = "Highschool Grad")
+
 p16 <- ggplot(data = manual, mapping = aes(x = gent, y = collegedegree)) + 
-  geom_boxplot()
+  geom_boxplot() +
+  labs(title = "Distribution of College Degree vs Gent", 
+       x = "Gent", y = "HCollege Degree")
 (p6 + p7 + p8) / (p9 + p10 + p14) / (p15 + p16)
 ```
 
