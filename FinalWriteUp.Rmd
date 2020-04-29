@@ -50,6 +50,7 @@ library(viridis)
 library(RColorBrewer)
 library("ggrepel")
 library(modelr)
+
 ```
 
 ```{r}
@@ -166,7 +167,7 @@ manual <- manual %>%
   mutate(gent = if_else(is.na(gent), 0, gent))
 ```
 
-In order to determine the location of gentrification we use spatial data to conduct our analysis:
+In order to determine the location of gentrification we analyze spatial data:
 
 ```{r}
 shape <- read_sf(dsn = "data", layer = "triangletracts")
@@ -204,7 +205,7 @@ ggplot(data = merged) +
 
 
 
-Next we want to visualize which regions in the research triangle area have experienced gentrification by plotting "gent" across the region. The blue census tracts are gentrified and the white tracts are not.
+Next, we want to visualize which regions in the research triangle area have experienced gentrification by mapping gentrification across the region. The blue census tracts are gentrified and the white tracts are not.
 
 ```{r}
 m1 <- ggplot(data = merged, aes(fill = gent)) +
@@ -217,10 +218,6 @@ m1 <- ggplot(data = merged, aes(fill = gent)) +
 
 
 
-
-
-We hypothesized that whether a census tract is in an urban or rural area would impact whether that region had experienced gentrification. Rural census tracts take the value 1 and urban census tracts are coded as 0.
-
 ```{r}
 merged <- merged %>% 
     mutate(rural = recode(rural, 
@@ -231,7 +228,7 @@ merged <- merged %>%
   mutate(rural=as.numeric(rural))
 ```
 
-Below, we visualize the urban/rural breakdown among census tracts in the research triangle.
+We hypothesize that urban character of an area will impact the odds that it has experienced gentrification. Below, we visualize the urban/rural breakdown of the research triangle. The dark green tracts are rural, and the light green tracts are urban.
 
 ```{r}
 m2 <- ggplot(data = merged, aes(fill = rural)) +
@@ -245,9 +242,18 @@ m1
 m2
 ```
 
-The census tracts shown above in dark green are classified as rural and those that are light green are urban. 
 
-By comparing the locations of gentrified tracts to urban areas, we can see that almost all gentrified tracts are in urban areas. Moreover, many of the gentrified tracts appear to be in and around city centers. This makes sense--we tend to think of gentrification as affecting highly urbanized downtown areas.
+
+By comparing the locations of gentrified tracts to urban areas, we can see that almost all gentrified tracts are in urban areas. 
+```{r}
+manual %>% 
+  filter(gent>0) %>% 
+  group_by(rural) %>% 
+  count(gent) %>% 
+  kable("markdown")
+```
+
+Of the 44 gentrified tracts, only 6 are rural. Moreover, many of the gentrified tracts appear to be in and around city centers. This makes sense--we tend to think of gentrification as affecting highly urbanized downtown areas.
 
 We can see that gentrified tracts tend to be around city centers, but we do not know which cities. The Triangle is a diverse region with three major cities. Raleigh is the heart of Wake county, Durham is the major city in Durham county, Chapel Hill is the population center of Orange county, and Chatham county is mostly rural. In order to get an idea of which areas in the triangle are most affected by gentrification, we look at which counties have the highest number and proportion of gentrified tracts.
 
@@ -296,11 +302,11 @@ countyprop2 %>%
   summarise(rural, gent_tracts, census_tracts, proportion_gent) %>% 
   kable(format="markdown", digits=3)
 ```
-  In both Durham and Raleigh, where there are around 20 gentrified tracts, the proportion of gentrified tracts increases when we take out the rural tracts. Raleigh shows a slight increase to 13.8%, but Durham's percentage jumps to 41.9% In Chapel Hill, where gentrification is effectively a non-factor, the percentage of gentrified urban tracts is roughly the same as for its whole county.
+  In both Durham and Raleigh, where there are around 20 gentrified tracts, the proportion of gentrified tracts increases when we take out the rural tracts. Raleigh shows just a slight increase to from 11.2% to 13.8%, but Durham's percentage jumps from 33.3% to 41.9% In Chapel Hill, where gentrification is effectively a non-factor, the percentage of gentrified urban tracts is roughly the same as for its whole county.
   
-  These three cities show us three different gentrification stories. Durham, a city with a storied African-American heritage and a historically large Black population, has experienced significant gentrification. In seven years, over 40% of its neighborhoods have seen a 6.7% decline in the black population. That is an incredibly significant demographic shift. In Raleigh, the cultural displacement is not nearly as severe. About 14% of its neighborhoods have been gentrified, which is not so significant of a shift. While Raleigh has certainly developed rapidly in this time frame, it has not undergone the same sort of demographic shellacking as Durham. This could be due to either its demographic history or responsible housing and growth policies. Chapel Hill, a city that has historically been predominantly white, has not experienced gentrification like Raleigh or Durham. 
+  These three cities show us three different gentrification stories. Durham, a city with a storied African-American heritage and a historically large Black population, has experienced significant gentrification. In seven years, over 40% of its neighborhoods have seen a 6.7% decline in the black population. That is an incredibly significant demographic shift. In Raleigh, the cultural displacement is not nearly as severe. About 14% of its neighborhoods have been gentrified, which is not so significant of a shift. While Raleigh has certainly developed rapidly over this time, it has not undergone the same sort of demographic shellacking as Durham. This could be due to either its demographic history or responsible housing and growth policies. Chapel Hill, a city that has historically been predominantly white, has not experienced gentrification like Raleigh or Durham. 
   
-  Durham is clearly the city most affected by gentrification. Since over 40% of its tracts have been gentrified between 2010 and 2017, it could be useful to zoom into the city to see which parts of town are being gentrified. 
+  Durham is clearly the city most affected by gentrification. Since over 40% of its tracts have been gentrified between 2010 and 2017, it will be useful to zoom in on the city to see which parts of town are being gentrified. 
 
 ```{r}
 durham <- merged %>% 
@@ -314,37 +320,77 @@ ggplot(durham, aes(fill=gent)) +
   scale_fill_distiller(palette = 'OrRd', guide = "legend", direction=1)
   
 ```
-East Durham appears to be the part of town that is experiencing the most gentrification.
+East Durham, a hisotrically Black part of town, appears to be experiencing the most gentrification. Below, we look at the city's racial divide and how it compares to gentrified areas.
 
 ```{r}
 durhamtracts <- cbind(durham, st_coordinates(st_centroid(durham)))
 
-mean(durhamtracts$X) 
+mean(durhamtracts$X)
 
 durhamtracts <- durhamtracts %>% 
   mutate(side = case_when(X>=(-78.91519) ~ "East", X<(-78.91519) ~ "West"))
 ```
 ```{r}
-durhamtracts %>% 
+t1 <- durhamtracts %>% 
   group_by(side) %>% 
   summarise(sum(black10)) 
 
-durhamtracts %>% 
+t2 <- durhamtracts %>% 
+  filter(gent>0) %>% 
   group_by(side) %>% 
   count(gent)
+
+names(t1)[2] <- "2010 Black Population" 
+
+t2 <- durhamtracts %>% 
+  group_by(side) %>% 
+  count(gent)
+
+names(t2)[3] <- "gent_tracts" 
+
+t2 <- t2 %>% 
+  group_by(side) %>% 
+  mutate(census_tracts=sum(gent_tracts))
+  
+t2 <- t2 %>%
+  group_by(side) %>% 
+  mutate(proportion_gent=gent_tracts/census_tracts)
+
+t1 <- t1 %>% 
+  mutate(totalblackpop=sum(t1$'2010 Black Population'))
+  
+t1 <- t1 %>%
+  mutate(proportion_black_pop=(t1$'2010 Black Population'/totalblackpop))
+
+
+t1 <- st_set_geometry(t1, NULL)
+t2 <- st_set_geometry(t2, NULL)
+
+
+t1 %>% 
+  group_by(side) %>% 
+  count(`2010 Black Population`, proportion_black_pop) %>% 
+  kable(format="markdown", digits=3)
+
+t2 %>% 
+  filter(gent>0) %>% 
+  group_by(side) %>% 
+  count(gent_tracts, census_tracts, proportion_gent)%>% 
+  kable(format="markdown", digits=3)
+  
 
 
 ```
 
+In 2010, East Durham contained 71% of the city's Black population. Between 2010 and 2017, 54% of those census tracts became gentrified. In West Durham, where 29% of the Black population lives, only 26% of the census tracts became gentrified. That is a significant disparity. Within Durham, we can see that gentrification is primarily happening in the predominantly Black part of town. This is evidence of what Amanda Abrams calls "the sense that home is not home anymore, at least for a portion of the population." All across this part of town, the Black population is decreasing at an unusually high rate. Comparing East to West Durham can give us some insight into why Raleigh, which has experienced a similar rate of growth to Durham over the past decade, has much lower gentrification percentages. East Durham and West Durham are governed by the same municipal government. While some zoning and permit differences might apply, both parts of town are mostly subject to the same development regulations. We speculated that Raleigh's low rate of gentrification might be due to thoughtful governance and sound policy, but the East/West Durham comparison suggests that demographic history is the most important factor in determining this specific measure of demogrgaphic change. In other words, where there are more Black people, there is more potential for a decrease in the Black population.
 
-
-Now that we have a better sense of where gentrification is happening in the research triangle, we would like to take a closer look at what factors are associated with this demographic change.
+Now that we have a sense of how cities are impacted by gentrification and further explored the case study of Durham, we will take a closer look at what factors are associated with this demographic change.
 
 ### Part 2: Factors Associated with Gentrification
 
-In part 2, we examine the factors associated with and the strongest predictors are of gentrification in these areas.
+In Part 2, We aim to examine the factors associated with and the strongest predictors of gentrification.
 
-In order to predict where gentrification is taking place we again, we fit a model with gent as the response variable. Since gent is a categorical variable with 2 outcomes, we fit a logistic model.
+In order to predict where gentrification is taking place, we fit a model with gentrified as the response variable. Since gentrified is a categorical variable with 2 outcomes, we fit a logistic model.
 
 ```{r}
 model <- glm(gent ~ collegewhite + whitecollar + privateschool + nodiploma + highschoolgrad + collegedegree + income_med + homeprice_med + early_late + moved, 
