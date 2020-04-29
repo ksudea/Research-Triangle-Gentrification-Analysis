@@ -177,7 +177,7 @@ merged <- inner_join(shape, manual, by = "geoid") %>%
 ```
 
 
-Shown below is a plot of the research triangle area (Chatham, Durham, Orange, and Wake counties).
+Shown below is a plot of the research triangle area (Chatham, Durham, Orange, and Wake counties) with the three major cities identified.
 
 
 ```{r}
@@ -190,23 +190,24 @@ cities <- cbind(shapeurban_aea, st_coordinates(st_centroid(shapeurban_aea)))
 cities<- as.data.frame(cities)
 ```
 
+
 ```{r}
 ggplot(data = merged) +
   geom_sf() +
   labs(title = "Research Triangle", 
        x = "Longitude", y = "Latitude") +
   geom_text_repel(data = cities, aes(x = X, y = Y, label = MunicipalB), 
-        fontface = "bold", nudge_x = c(1, -1.5, 2, 2, -1), nudge_y = c(0.25, 
+        fontface = "bold", nudge_x = c(-2, 1.5, 1, -2, -2), nudge_y = c(0.25, 
             0.25, 0.5, 0.5, 0.5))
 ```
 
 
 
 
-Next we want to visualize which regions in the research triangle area have experienced gentrification by plotting "gent" across the region:
+Next we want to visualize which regions in the research triangle area have experienced gentrification by plotting "gent" across the region. The blue census tracts are gentrified and the white tracts are not.
 
 ```{r}
-ggplot(data = merged, aes(fill = gent)) +
+m1 <- ggplot(data = merged, aes(fill = gent)) +
   geom_sf() +
   labs(title = "Research Triangle", 
        subtitle = "Gentrification by census tract") +
@@ -214,7 +215,41 @@ ggplot(data = merged, aes(fill = gent)) +
   scale_fill_distiller(palette = 'GnBu', guide = "legend", n="Gentrified", direction=1, type="qual") 
 ```
 
-The census tracts shown above in blue are classified as gentrified and those that are white are not. 
+
+
+
+
+We hypothesized that whether a census tract is in an urban or rural area would impact whether that region had experienced gentrification. Rural census tracts take the value 1 and urban census tracts are coded as 0.
+
+```{r}
+merged <- merged %>% 
+    mutate(rural = recode(rural, 
+                      "Rural" = "1", 
+                      "Urban" = "0"))
+merged <- merged %>% 
+  mutate(rural=as.character(rural)) %>% 
+  mutate(rural=as.numeric(rural))
+```
+
+Below, we visualize the urban/rural breakdown among census tracts in the research triangle.
+
+```{r}
+m2 <- ggplot(data = merged, aes(fill = rural)) +
+  geom_sf() +
+  labs(title = "Research Triangle", 
+       subtitle = "Urban areas by census tract") +
+  theme_void() +
+  scale_fill_distiller(palette = '', guide = "legend", direction=1)
+
+m1
+m2
+```
+
+The census tracts shown above in dark green are classified as rural and those that are light green are urban. 
+
+By comparing the locations of gentrified tracts to urban areas, we can see that almost all gentrified tracts are in urban areas. Moreover, many of the gentrified tracts appear to be in and around city centers. This makes sense--we tend to think of gentrification as affecting highly urbanized downtown areas.
+
+We can see that gentrified tracts tend to be around city centers, but we do not know which cities. The Triangle is a diverse region with three major cities. Raleigh is the heart of Wake county, Durham is the major city in Durham county, Chapel Hill is the population center of Orange county, and Chatham county is mostly rural. In order to get an idea of which areas in the triangle are most affected by gentrification, we look at which counties have the highest number and proportion of gentrified tracts.
 
 
 ```{r}
@@ -237,35 +272,71 @@ countyprop %>%
   summarise(gent_tracts, census_tracts, proportion_gent) %>% 
   kable(format="markdown", digits=3)
 ```
-
-
-
-We hypothesized that whether a census tract is in an urban or rural area would impact whether that region had experienced gentrification. Rural census tracts take the value 1 and urban census tracts are coded as 0.
+  Unsurprisingly, Chatham county only has one gentrified tract. Every census tract in the county is rural, and its one gentrified tract is one of the relatively rare rural gentrified tracts. Orange county, interestingly, has just two gentrified tracts, and only 7.7% of its tracts are gentrified. Wake County has the most gentrified tracts in the region, but as the biggest county in the region, its percentage of gentrified tracts is also relatively low, at just 11.2%. Durham county clearly experiences the most gentrification. Its number of gentrified tracts is about equal to that of Wake county, but its proportion is by far the highest at 33.3%. 
+  Looking at the breakdown of gentrified tracts by county is useful, but it still only hints at broad strokes. Based on our spatial analysis, we suspect that gentrification is most prevalent in cities. We know which cities are in which counties, and we know which counties experience the most gentrification, but we want to be more specific in our analysis. In order to pinpoint which cities experience the most gentrification, we filter out the rural counties to look at the proportion of gentrified urban tracts within each county.
+  The only urban census tracts in Durham county are in the city of Durham, and the same goes for Orange county and Chapel Hill. The only urban tracts in Wake county are in Raleigh's sprawling metropolis, which technically incorporates other cities but is commonly understood as the greater Raleigh area.
 
 ```{r}
-merged <- merged %>% 
-    mutate(rural = recode(rural, 
-                      "Rural" = "1", 
-                      "Urban" = "0"))
-merged <- merged %>% 
-  mutate(rural=as.character(rural)) %>% 
-  mutate(rural=as.numeric(rural))
+countyprop2 <- manual %>%
+  group_by(County, rural) %>% 
+  count(gent) 
+
+countyprop2 <- countyprop2 %>%
+  group_by(County, rural) %>% 
+  mutate(census_tracts=sum(n))
+
+names(countyprop2)[4] <- "gent_tracts" 
+
+countyprop2 <- countyprop2 %>%
+  group_by(County) %>% 
+  mutate(proportion_gent=gent_tracts/census_tracts)
+
+countyprop2 %>% 
+  filter(gent>0, rural=="Urban") %>% 
+  summarise(rural, gent_tracts, census_tracts, proportion_gent) %>% 
+  kable(format="markdown", digits=3)
 ```
-
-Below, we visualize the urban/rural breakdown among census tracts in the research triangle.
+  In both Durham and Raleigh, where there are around 20 gentrified tracts, the proportion of gentrified tracts increases when we take out the rural tracts. Raleigh shows a slight increase to 13.8%, but Durham's percentage jumps to 41.9% In Chapel Hill, where gentrification is effectively a non-factor, the percentage of gentrified urban tracts is roughly the same as for its whole county.
+  
+  These three cities show us three different gentrification stories. Durham, a city with a storied African-American heritage and a historically large Black population, has experienced significant gentrification. In seven years, over 40% of its neighborhoods have seen a 6.7% decline in the black population. That is an incredibly significant demographic shift. In Raleigh, the cultural displacement is not nearly as severe. About 14% of its neighborhoods have been gentrified, which is not so significant of a shift. While Raleigh has certainly developed rapidly in this time frame, it has not undergone the same sort of demographic shellacking as Durham. This could be due to either its demographic history or responsible housing and growth policies. Chapel Hill, a city that has historically been predominantly white, has not experienced gentrification like Raleigh or Durham. 
+  
+  Durham is clearly the city most affected by gentrification. Since over 40% of its tracts have been gentrified between 2010 and 2017, it could be useful to zoom into the city to see which parts of town are being gentrified. 
 
 ```{r}
-ggplot(data = merged, aes(fill = rural)) +
+durham <- merged %>% 
+  filter(County=="Durham", rural=="0")
+
+ggplot(durham, aes(fill=gent)) + 
   geom_sf() +
-  labs(title = "Research Triangle", 
-       subtitle = "Urban areas by census tract") +
+  labs(title = "City of Durham", 
+       subtitle = "Gentrified tracts") +
   theme_void() +
-  scale_fill_distiller(palette = '', guide = "legend", direction=1)
+  scale_fill_distiller(palette = 'OrRd', guide = "legend", direction=1)
+  
+```
+East Durham appears to be the part of town that is experiencing the most gentrification.
+
+```{r}
+durhamtracts <- cbind(durham, st_coordinates(st_centroid(durham)))
+
+mean(durhamtracts$X) 
+
+durhamtracts <- durhamtracts %>% 
+  mutate(side = case_when(X>=(-78.91519) ~ "East", X<(-78.91519) ~ "West"))
+```
+```{r}
+durhamtracts %>% 
+  group_by(side) %>% 
+  summarise(sum(black10)) 
+
+durhamtracts %>% 
+  group_by(side) %>% 
+  count(gent)
+
+
 ```
 
-The census tracts shown above in dark green are classified as rural and those that are light green are urban. 
 
-By comparing the locations of gentrified tracts to urban areas, we can see that almost all gentrified tracts are in urban areas. Moreover, many of the gentrified tracts appear to be in and around city centers. This makes sense--we tend to think of gentrification as affecting highly urbanized downtown areas.
 
 Now that we have a better sense of where gentrification is happening in the research triangle, we would like to take a closer look at what factors are associated with this demographic change.
 
