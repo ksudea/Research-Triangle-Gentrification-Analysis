@@ -20,13 +20,13 @@ suppressMessages(library("tidyverse"))
 
 In the past 10 years, development in the Research Triangle area has skyrocketed, and the face of downtown has changed drastically. Alongside the rapid growth, gentrification has become a major issue in the region. Jounralist Amanda Abrams sums up the changes in Durham well: "What has been largely overlooked is the cultural displacement that can accompany rapid urban change: the sense that home is not home anymore, at least for a portion of the population" (https://nyti.ms/2VyxTfs). Where black and brown people are being pushed out, white homeowners in different tax brackets are coming in. A 2019 New York Times article describes the type of demographic replacement that is occuring: “In South Park, a neighborhood with picturesque views of the Raleigh skyline, the white home buyers who have recently moved in have average incomes more than three times that of the typical household already here” (https://nyti.ms/2zuVPb). Higher incomes, higher home prices, and more white-collar workers tend to be associated with this kind of demographic change. Our research captures what factors lead to the displacement of the black population in the Research Triangle.
 
-Our analysis focuses on the percentage point change between 2010 and 2017 in several demographic characteristics for census tracts in Chatham, Durham, Orange, and Wake counties. We look at the college educated white population, the population of several different education levels, the percentage of white collar workers, the median income, median home price, the percentage of children in private school, among other variables. The response is a binary variable that categorizes census tracts as either “gentrified” or “not gentrified,” based on the percentage point change in the black population. The distribution of the percentage point changes in the black population across all census tracts (omitting any NAs in the dataset) is 6.76. The mean is very close to zero, so we have decided to classify a census tract as “gentrified” if its decline in black population is greater than 6.76 percentage points.
+Our analysis focuses on the percentage point change between 2010 and 2017 in several demographic characteristics for census tracts in Chatham, Durham, Orange, and Wake counties. We look at the college educated white population, the population of several different education levels, the percentage of white collar workers, the median income, median home price, the percentage of children in private school, among other variables. The response is a binary variable that categorizes census tracts as either “gentrified” or “not gentrified,” based on the percentage point change in the black population. We have decided to classify a census tract as gentrified if its decline in black population is greater than or equal to 6.76 percentage points.
 
-We hypothesize that census tracts in which there is an increase in college educated whites, an increase in median household price and an increase in the amount of people who obtain a bachelor degree or higher will correspond to a decrease in Black population. In addition to exploring the mechanisms behind this displacement, we are interested in investigating where this displacement occurs. We want to be able to pinpoint the neighborhoods with the highest rate of incoming college-educated white people and the highest rate of Black exodus.
+We hypothesize that census tracts in which there are increases in college educated whites, median household price and the amount of people who obtain a bachelor degree or higher will correspond to a decrease in Black population. In addition to exploring the mechanisms behind this displacement, we are interested in investigating where this displacement occurs. We want to be able to pinpoint the neighborhoods with the highest rate of incoming college-educated white people and the highest rate of Black exodus.
 
-We put together a dataset of relevant variables from The Census Bureau's annual American Community Survey, which conducts a wide range of demographic surveys that covers almost everything a decennial census covers. The data can be found here: https://factfinder.census.gov/faces/nav/jsf/pages/index.xhtml.
+We put together a dataset of relevant variables from The Census Bureau's annual American Community Survey, which conducts a wide range of demographic surveys that cover almost everything a decennial census covers. The data can be found here: https://factfinder.census.gov/faces/nav/jsf/pages/index.xhtml.
 
-All of our demographic data is framed in terms of percentage point change from 2010-2017. By measuring our variables in percentage point changes, we are making our variable more robust to population changes in the years between 2010-2017. We are more focused on the proportion of demographic changes, as opposed to changes of a particular demographic group in a vacuum. Our "metadata" file explains what each variable is actually measuring. Median home price and median household income are the only two variables measured in monetary terms, as opposed to PP change.
+By measuring our demographic variables in percentage point changes, we are making our variables more robust to population changes in the years between 2010-2017. We are more focused on the proportion of demographic changes, as opposed to changes of a particular demographic group in a vacuum. Our "metadata" file explains what each variable is actually measuring. Median home price and median household income are the only two variables measured in monetary terms, as opposed to PP change.
 
 
 ```{r}
@@ -135,7 +135,7 @@ ggplot(data = manual, mapping = aes(x = black)) +
   labs (title = "Distribution of Change in Black Population from 2010 to 2017", x = "Percentage Point change in Black Population", y = "Count")
 ```
 
-The standard deviation is  6.765474. We will use this value as the gentrification threshold. If a tract has experienced more than a -6.765 percentage point change in the Black population, we will consider that census tract "gentrified." Even though the mean is not exactly at 0, it is close enough that we feel one standard deviation away from 0 is a sufficient threshold for gentrification.
+The standard deviation, omitting NAs, is  6.765474. We will use this value as the gentrification threshold. If a tract has experienced more than a -6.765 percentage point change in the Black population, we will consider that census tract "gentrified." Even though the mean is not exactly 0, it is close enough that we feel one standard deviation away from 0 is a sufficient threshold for gentrification.
 
 
 ```{r}
@@ -146,6 +146,7 @@ manual <- manual %>%
 manual %>% 
   count(gent) %>% 
   kable(format="markdown")
+
 ```
 
 In our data set we have 244 non-gentrified census tracts and 44 gentrified ones.
@@ -157,8 +158,6 @@ After examining the rest of the univariate and bivariate EDA (located in section
 #### Part I: Location of Gentrification
 
 In part I, we ask: where in the Research Triangle is gentrification occurring the most?
-
-First, we create the response variable "gent" to represent whether a census tract is gentrified or not. As described above, if a census tract has less than or equal to -6.765 percent change in Black population then we classify the region as gentrified and the variable gent will be "1" otherwise the region will not be classified as gentrified and gent will be "0". The response variable "gent" will be used in order visualize and eventually create a logistic model.
 
 ```{r}
 manual <- manual %>% 
@@ -203,17 +202,16 @@ ggplot(data = merged) +
 ```
 
 
-
-
-Next, we want to visualize which regions in the research triangle area have experienced gentrification by mapping gentrification across the region. The blue census tracts are gentrified and the white tracts are not.
-
 ```{r}
+brks <- c(0, 1)
+
 m1 <- ggplot(data = merged, aes(fill = gent)) +
   geom_sf() +
   labs(title = "Research Triangle", 
        subtitle = "Gentrification by census tract") +
   theme_void() +
-  scale_fill_distiller(palette = 'GnBu', guide = "legend", n="Gentrified", direction=1, type="qual") 
+  scale_fill_distiller(palette = 'GnBu', guide = "legend", n="", direction=1, type="qual", breaks=brks) + 
+  theme(legend.position="bottom")
 ```
 
 
@@ -221,22 +219,26 @@ m1 <- ggplot(data = merged, aes(fill = gent)) +
 ```{r}
 merged <- merged %>% 
     mutate(rural = recode(rural, 
-                      "Rural" = "1", 
-                      "Urban" = "0"))
+                      "Rural" = "0", 
+                      "Urban" = "1"))
+
 merged <- merged %>% 
   mutate(rural=as.character(rural)) %>% 
   mutate(rural=as.numeric(rural))
 ```
 
-We hypothesize that urban character of an area will impact the odds that it has experienced gentrification. Below, we visualize the urban/rural breakdown of the research triangle. The dark green tracts are rural, and the light green tracts are urban.
+We hypothesize that urban character of an area will impact the odds that it has experienced gentrification. Below, we visualize the urban/rural breakdown of the research triangle, and which tracts have experienced gentrification. In the lefthand map, the blue census tracts are gentrified and the white tracts are not. On the righthand map, the dark green tracts are rural, and the white tracts are urban.
 
 ```{r}
+
+
 m2 <- ggplot(data = merged, aes(fill = rural)) +
   geom_sf() +
   labs(title = "Research Triangle", 
        subtitle = "Urban areas by census tract") +
   theme_void() +
-  scale_fill_distiller(palette = '', guide = "legend", direction=1)
+  scale_fill_distiller(palette = 'Greens', guide = "legend", n= "", direction=-1, breaks=brks) + 
+  theme(legend.position="bottom")
 
 m1
 m2
@@ -253,7 +255,22 @@ manual %>%
   kable("markdown")
 ```
 
+
 Of the 44 gentrified tracts, only 6 are rural. Moreover, many of the gentrified tracts appear to be in and around city centers. This makes sense--we tend to think of gentrification as affecting highly urbanized downtown areas.
+
+```{r}
+manual2 <- manual %>% 
+  mutate(gent=as.character(gent))
+ggplot(data = manual2, aes(x = rural, fill = gent)) +
+
+geom_bar(position = "fill") +
+
+labs(y = "Proportion", 
+
+title = "Gentrification by Urban Character") +
+
+coord_flip()
+```
 
 We can see that gentrified tracts tend to be around city centers, but we do not know which cities. The Triangle is a diverse region with three major cities. Raleigh is the heart of Wake county, Durham is the major city in Durham county, Chapel Hill is the population center of Orange county, and Chatham county is mostly rural. In order to get an idea of which areas in the triangle are most affected by gentrification, we look at which counties have the highest number and proportion of gentrified tracts.
 
@@ -278,14 +295,33 @@ countyprop %>%
   summarise(gent_tracts, census_tracts, proportion_gent) %>% 
   kable(format="markdown", digits=3)
 ```
-  Unsurprisingly, Chatham county only has one gentrified tract. Every census tract in the county is rural, and its one gentrified tract is one of the relatively rare rural gentrified tracts. Orange county, interestingly, has just two gentrified tracts, and only 7.7% of its tracts are gentrified. Wake County has the most gentrified tracts in the region, but as the biggest county in the region, its percentage of gentrified tracts is also relatively low, at just 11.2%. Durham county clearly experiences the most gentrification. Its number of gentrified tracts is about equal to that of Wake county, but its proportion is by far the highest at 33.3%. 
-  Looking at the breakdown of gentrified tracts by county is useful, but it still only hints at broad strokes. Based on our spatial analysis, we suspect that gentrification is most prevalent in cities. We know which cities are in which counties, and we know which counties experience the most gentrification, but we want to be more specific in our analysis. In order to pinpoint which cities experience the most gentrification, we filter out the rural counties to look at the proportion of gentrified urban tracts within each county.
+
+
+
+
+  Unsurprisingly, Chatham county only has one gentrified tract. Every census tract in the county is rural, and its one gentrified tract is one of the relatively rare rural gentrified tracts. Orange county, interestingly, has just two gentrified tracts, and only 7.1% of its tracts are gentrified. Wake County has the most gentrified tracts in the region, but as the biggest county in the region, its percentage of gentrified tracts is also relatively low, at just 11.2%. Durham county clearly experiences the most gentrification. Its number of gentrified tracts is about equal to that of Wake county, but its proportion is by far the highest at 33.3%. 
+  
+```{r}
+ggplot(data = manual2, aes(x = County, fill = gent)) +
+
+geom_bar(position = "fill") +
+
+labs(y = "Proportion", 
+
+title = "Gentrification of Tracts by County") +
+
+coord_flip()
+```
+
+  Looking at the breakdown of gentrified tracts by county is useful, but it still only hints at broad strokes. Based on our spatial analysis, we suspect that gentrification is most prevalent in cities. We know which cities are in which counties, and we know which counties experience the most gentrification, but we want to be more specific in our analysis. In order to pinpoint the scale of gentrification within each city, we filter out the rural counties to look at the proportion of gentrified urban tracts within each county.
   The only urban census tracts in Durham county are in the city of Durham, and the same goes for Orange county and Chapel Hill. The only urban tracts in Wake county are in Raleigh's sprawling metropolis, which technically incorporates other cities but is commonly understood as the greater Raleigh area.
 
 ```{r}
 countyprop2 <- manual %>%
   group_by(County, rural) %>% 
   count(gent) 
+
+
 
 countyprop2 <- countyprop2 %>%
   group_by(County, rural) %>% 
@@ -297,27 +333,52 @@ countyprop2 <- countyprop2 %>%
   group_by(County) %>% 
   mutate(proportion_gent=gent_tracts/census_tracts)
 
-countyprop2 %>% 
-  filter(gent>0, rural=="Urban") %>% 
-  summarise(rural, gent_tracts, census_tracts, proportion_gent) %>% 
-  kable(format="markdown", digits=3)
+
 ```
-  In both Durham and Raleigh, where there are around 20 gentrified tracts, the proportion of gentrified tracts increases when we take out the rural tracts. Raleigh shows just a slight increase to from 11.2% to 13.8%, but Durham's percentage jumps from 33.3% to 41.9% In Chapel Hill, where gentrification is effectively a non-factor, the percentage of gentrified urban tracts is roughly the same as for its whole county.
+
+```{r}
+names(shapeurban)[5] <- "County" 
+
+countyprop3 <- countyprop2 %>% 
+  filter(gent>0, rural=="Urban") %>% 
+  count(gent_tracts, census_tracts, proportion_gent)
+
+c <- tolower(substring(shapeurban$County, 2))
+c1 <- toupper(substring(shapeurban$County, 1, 1))
+
+shapeurban <- shapeurban %>% 
+  mutate(County= paste(c1, c, sep=""))
+
+ countyprop3 <- inner_join(shapeurban, countyprop3, by="County")
+ 
+ names(countyprop3)[3] <- "City"
+ 
+ countyprop3 <- st_set_geometry(countyprop3, NULL)
+ 
+ countyprop3 %>% 
+  count(City, gent_tracts, census_tracts, proportion_gent) %>% 
+  kable(format="markdown", digits=3)
+
+```
+
+
+ 
+ In Chapel Hill, where gentrification is effectively a non-factor, the percentage of gentrified urban tracts is roughly the same as for its whole county. In both Durham and Raleigh, where there are around 20 gentrified tracts, the proportion of gentrified tracts increases when we take out the rural tracts. Raleigh shows just a slight increase to from 11.2% to 13.8%, but Durham's percentage jumps from 33.3% to 41.9%. 
   
-  These three cities show us three different gentrification stories. Durham, a city with a storied African-American heritage and a historically large Black population, has experienced significant gentrification. In seven years, over 40% of its neighborhoods have seen a 6.7% decline in the black population. That is an incredibly significant demographic shift. In Raleigh, the cultural displacement is not nearly as severe. About 14% of its neighborhoods have been gentrified, which is not so significant of a shift. While Raleigh has certainly developed rapidly over this time, it has not undergone the same sort of demographic shellacking as Durham. This could be due to either its demographic history or responsible housing and growth policies. Chapel Hill, a city that has historically been predominantly white, has not experienced gentrification like Raleigh or Durham. 
+  These three cities show us three different gentrification stories. Durham, a city with a storied African-American heritage and a historically large Black population, has experienced significant gentrification. In seven years, over 40% of its neighborhoods have seen at least a 6.7% decline in the black population. That is an incredibly significant demographic shift. In Raleigh, the cultural displacement is not nearly as severe. About 14% of its neighborhoods have been gentrified, which is not so significant of a shift. While Raleigh has certainly developed rapidly over this time, it has not undergone the same sort of demographic shellacking as Durham. This could be due to either its demographic history or responsible housing and growth policies. Chapel Hill, a city that has historically been predominantly white, has not experienced gentrification like Raleigh or Durham. 
   
   Durham is clearly the city most affected by gentrification. Since over 40% of its tracts have been gentrified between 2010 and 2017, it will be useful to zoom in on the city to see which parts of town are being gentrified. 
 
 ```{r}
 durham <- merged %>% 
-  filter(County=="Durham", rural=="0")
+  filter(County=="Durham", rural=="1")
 
 ggplot(durham, aes(fill=gent)) + 
   geom_sf() +
   labs(title = "City of Durham", 
        subtitle = "Gentrified tracts") +
   theme_void() +
-  scale_fill_distiller(palette = 'OrRd', guide = "legend", direction=1)
+  scale_fill_distiller(palette = 'OrRd', guide = "legend", n="", direction=1, breaks=brks)
   
 ```
 East Durham, a hisotrically Black part of town, appears to be experiencing the most gentrification. Below, we look at the city's racial divide and how it compares to gentrified areas.
@@ -325,11 +386,12 @@ East Durham, a hisotrically Black part of town, appears to be experiencing the m
 ```{r}
 durhamtracts <- cbind(durham, st_coordinates(st_centroid(durham)))
 
-mean(durhamtracts$X)
+centralst <- mean(durhamtracts$X)
 
 durhamtracts <- durhamtracts %>% 
   mutate(side = case_when(X>=(-78.91519) ~ "East", X<(-78.91519) ~ "West"))
 ```
+
 ```{r}
 t1 <- durhamtracts %>% 
   group_by(side) %>% 
@@ -382,7 +444,8 @@ t2 %>%
 
 ```
 
-In 2010, East Durham contained 71% of the city's Black population. Between 2010 and 2017, 54% of those census tracts became gentrified. In West Durham, where 29% of the Black population lives, only 26% of the census tracts became gentrified. That is a significant disparity. Within Durham, we can see that gentrification is primarily happening in the predominantly Black part of town. This is evidence of what Amanda Abrams calls "the sense that home is not home anymore, at least for a portion of the population." All across this part of town, the Black population is decreasing at an unusually high rate. Comparing East to West Durham can give us some insight into why Raleigh, which has experienced a similar rate of growth to Durham over the past decade, has much lower gentrification percentages. East Durham and West Durham are governed by the same municipal government. While some zoning and permit differences might apply, both parts of town are mostly subject to the same development regulations. We speculated that Raleigh's low rate of gentrification might be due to thoughtful governance and sound policy, but the East/West Durham comparison suggests that demographic history is the most important factor in determining this specific measure of demogrgaphic change. In other words, where there are more Black people, there is more potential for a decrease in the Black population.
+In 2010, East Durham contained 71% of the city's Black population. Between 2010 and 2017, 54% of those census tracts became gentrified. In West Durham, where 29% of the Black population lives, only 26% of the census tracts became gentrified. That is a significant disparity. Within Durham, we can see that gentrification is primarily happening in the predominantly Black part of town. This is evidence of what Amanda Abrams calls "the sense that home is not home anymore, at least for a portion of the population." All across this part of town, the Black population is decreasing at an unusually high rate. Comparing East to West Durham can give us some insight into why Raleigh, which has experienced a similar rate of growth to Durham over the past decade, has much lower gentrification percentages. East Durham and West Durham are governed by the same municipal government. While some zoning and permit differences might apply, both parts of town are mostly subject to the same development regulations. We speculated that Raleigh's low rate of gentrification might be due to thoughtful governance and sound policy, but the East/West Durham comparison suggests that demographic history is a important factor in determining this specific measure of demogrgaphic change. In other words, where there are more Black people, there is more potential for a decrease in the Black population.
+
 
 Now that we have a sense of how cities are impacted by gentrification and further explored the case study of Durham, we will take a closer look at what factors are associated with this demographic change.
 
@@ -416,9 +479,9 @@ Logistic model predicting gentrification:
 
 `log(pi_hat/(1-pi_hat)) = -2.2308 + (0.1084)*(collegewhite) - (0.0569)*(whitecollar) + (0.1347)*(nodiploma) + (0.0694)*(highschoolgrad) + (0.00001)*(homeprice_med)`
 
-We hypothesized that whether a census tract is urban or rural would impact the gentrification of an area. In order to determine urban vs rural impact we compared a map of urban tracts to gentrified tracts. Many of the gentrified tracts appeared to be in and around city centers. Now, we want to determine if the variable "rural" is significant and should be added to our model.
+We hypothesized that whether a census tract is urban or rural would impact the gentrification of an area. In order to determine urban vs rural impact we compared a map of urban tracts to gentrified tracts. Many of the gentrified tracts appeared to be in and around city centers. Now, we want to determine if urban character is significant and should be added to our model.
 
-We create a full model that includes "rural" and conduct a drop in deviance test to determine if we should add "rural" to the model: 
+We create a full model that includes rural and conduct a drop in deviance test to determine if we should add rural to the model: 
 
 The null hypothesis is that the coefficient for rural does not add significant information to our model. The alternative hypothesis is that the coefficient for rural does add significant information to our model.
 
@@ -426,15 +489,15 @@ H0: B_rural = 0
 HA: B_rural != 0 
 
 ```{r}
-model_aic_full <- glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med + rural, data=manual, family= "binomial" )
+model_aic_full <- glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med + rural , data=manual, family= "binomial" )
 tidy(model_aic_full) %>% 
-  kable(format="markdown", digits=3)
+  kable(format="markdown", conf.int=T, digits=3)
 ```
 
 
 ```{r}
-(dev_m <- glance(model_aic)$deviance)
-(dev_full <- glance(model_aic_full)$deviance)
+dev_m <- (model_aic)$deviance
+dev_full <-(model_aic_full)$deviance
 (test_stat <- dev_m - dev_full)
 ```
 
@@ -446,11 +509,321 @@ The drop in deviance test has a test statistic of 4.014 and a p-value of 0.0451.
 
 Since the chisq p-value for adding "Rural" to the model is less than .05, we reject the null hypothesis that "Rural" is not a significant predictor of whether or not a region has experienced gentrification.
 
-Therefore we will continue with this full model for the remainder of our analysis.
+We saw earlier that not all counties are gentrified equally. To test whether or not to incorporate the variable County into the model, we run another drop in deviance test, this time adding County to the model.
+
+```{r}
+model_county <- glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med + rural + County, data=manual, family= "binomial" )
+tidy(model_county, conf.int=T) %>% 
+  kable(format="markdown", digits=3)
+
+dev_county <- (model_county)$deviance
+dev_full <- (model_aic_full)$deviance
+(test_stat2 <- dev_full-dev_county) 
+```
+```{r}
+1- pchisq(test_stat2, 3)
+```
+
+Something interesting is going on. While the test statistic is very high (20.12) and the p-value is very low (.000), which encourages us to add County to our model, the county p-values are extremely high. We decide to check for multicollinearity to see if something is amiss in the model that might account for this anomaly.
 
 
-Now that we have determined Rural is a significant predictor variable, we consider adding interaction terms with rural to our model. We use k-fold cross validation to determine if we should add the interactions homeprice_med*rural and collegewhite*rural. We start by looking at the 5-fold cross validation results for the model above using the predictors: collegewhite, whitecollar, nodiploma, highschoolgrad, homeprice_med and rural. We fit a model on each training set and calcualte the testing error. Next, we repeat the same process using the predictors: collegewhite, whitecollar, nodiploma, highschoolgrad, homeprice_med, rural, and our new interaction terms, homeprice_med*rural and collegewhite*rural.
+In order to avoid collinearity of predictor variables we want to confirm that no two variables are highly correlated with one another. We do so by checking multicollinearity and looking for variables with high VIF (Variance Inflation Factor).
 
+```{r}
+library(rms) 
+tidy(vif(model_county)) %>% 
+  kable(format="markdown", digits=3)
+```
+
+Multicollinearity appears to be a problem because both Wake and Durham counties have a vif of around 10. However, since these are categorical variables, multicollinearity does not quite make sense. Since the vast majority of tracts are in Durham and Wake counties, their standard errors are artifically inflated. This accounts for the unusally high p-values and vifs. We have seen that there are major differences in gentrified tracts between the counties, so we are going to continue with County included in our model. 
+
+
+### Assumptions 
+
+In order to use the full model with the predictor variables collegewhite, whitecollar, nodiploma, highschoolgrad, 
+homeprice_med, and rural, we must first test how well this model satisfies assumptions. A complete look at assumptions is present in section 6 (Additional work), for now we will just discuss the independence assumption.
+
+```{r}
+model_aug <- augment(model_county, type.predict = "response", type.residuals = "response")
+
+```
+
+We created a heat map of residuals in order to examine the independence assumption:
+
+```{r}
+model_aug <- model_aug %>%
+    mutate(.rownames=as.numeric(.rownames))
+model_aug_merged <- inner_join(merged, model_aug, by = ".rownames")
+```
+
+```{r}
+ggplot(data = model_aug_merged, aes(fill = .resid)) +
+  geom_sf() +
+  labs(title = "Research Triangle", 
+       subtitle = "Heat Map of Residuals") +
+  theme_void() +
+  scale_fill_distiller(palette = "BuPu" , guide = "legend")
+```
+
+We are able to see from the map that the distribution of residuals is fairly random. From this, we are able to conclude the independence is satisfied.
+
+### Section 3: Discussion
+
+Now that we've confirmed that our model satisfies assumptions, let's take another look at our chosen logistic model: 
+
+```{r}
+tidy(model_county, conf.int = TRUE, exponentiate = FALSE) %>%
+  kable(digits = 3, format = "markdown")
+```
+
+
+
+`log(pi_hat/(1-pi_hat)) = -2.925 + (0.093)*(collegewhite) - (0.059)*(whitecollar) + (0.145)*(nodiploma) + (0.060)*(highschoolgrad) + (0.00001)*(homeprice_med) + (1.002)*(ruralUrban) + (1.073)*(CountyDurham) - (1.223)*(CountyOrange) - (0.623)*(CountyWake)`
+
+The intercept, -2.925, describes the log-odds that a census tract has experienced gentrification when the percentage point change (from 2010-2017) in college educated whites, white collar workers, those with no diploma, highschool graduates, and median home price is equal to zero and the census tract is rural in Chatham county. 
+
+We would like to discuss the variables that have the most impact on the response variable gent. Therefore, we will discuss variables with p-values of <0.05. 
+The change in college educated whites seems to have a reliably strong impact on gentrification: holding all other variables constant, with a percentage point change in college educated whites, the odds of gentrification are expected to multiply by a factor of exp(0.093). 
+
+In addition, the rural variable also appears to have a strong impact. According to the model coefficient for the term ruralUrban, holding all other variables constant, the odds of gentrification for an urban area is expected to be exp(1.002) that of a rural locale. We would like to suggest that the change in college-educated whites in a county and urban character likely greatly impact gentrification.
+
+Although the p-value for Durham county might be artifically high, it is noteworthy that the odds of gentrification for a Durham census tract are exp(1.073) that of a census tract in Chatham county.
+
+In order to use our model to predict whether an area is gentrified or not, we create a Receiver Operating Characteristic (ROC) curve. The ROC curve will both help us assess how well the model fits the data as well as pick a threshold for our logistic model.
+
+```{r}
+(roc_curve <- ggplot(model_aug,
+                     aes(d = as.numeric(gent) - 1,
+                         m = .fitted)) +
+  geom_roc(n.cuts = 10, labelround = 3) +
+  geom_abline(intercept = 0) +
+  labs(title = "Receiver Operating Characteristic (ROC) curve", 
+       x = "False Positive Rate (1 - Specificity)",
+       y = "True Positive Rate (Sensitivity)") )
+```
+
+
+```{r}
+calc_auc(roc_curve)$AUC
+```
+
+Since our AUC is 0.8016 we can see that the logistic model fits the data fairly well.
+
+In order to pick an appropriate threshold for predicting gentrification, we have to consider the potential consequences of misclassifying an area as gentrified or not gentrified. If we erroneously classify an area as not gentrified, we could miss an opportunity to control the effects of gentrification and we risk letting growth have far-reaching cultural consequences. It we call an area gentrified, somebody will likely conduct further research on the area before making any policy decisions. The risk of false-positive classification is not very high compared to the risk of a false-negative outcome.
+
+The Apache Junction Armchairs, being socially responsible policymakers, are more worried about falsely classifying an area as not gentrified than we are about falsely classifying an area as gentrified. The social costs are higher in the former scenario. Given these concerns, we are picking .148 as the threshold to predict gentrification.
+
+### Section 4: Limitations
+
+The biggest limitation of our study is the definition of gentrification. Many prior studies define gentrification as some combination of demographic characteristics and poverty rate. Our characterization of gentrification is hamstrung by the fact that it does not incorporate any economic factors. In addition, it would be helpful to analyze more variables. Gentrification is a process that incorporates a variety of socioeconomic groups, so more racial and economic data would have been helpful for analyzing gentrification from a number of different angles. 
+
+In addition, we turned ‘Black percentage point change’ into a logistic model by picking an arbitrary threshold for determining if a tract was gentrified or not based on a rough measure of the Standard Deviation. Since the average census tract (omitting NA’s) fell 6.76 PPs away from the mean of the distribution of “black” , which was roughly 0, we decided to convert any tract with a value “black” of less than or equal to 6.76 into a gentrified tract. This is not grounded in any social science research, but rather it is relative to the distribution. A more complete analysis would determine an appropriate threshold of gentrification based on some mixture of quantitative and qualitative research.
+
+### Section 5: Conclusion
+
+Our study was motivated by two questions: where in the Research Triangle does displacement of black population occur, and which factors contribute to the displacement of the black population in the Research Triangle? The spatial data suggests a strong association between gentrification and urban character--most gentrified tracts were in urban locales, and many were also in city centers. We also pinpointed the difference in gentrification across the region's cities. Durham experiences the most gentrification by far, Raleigh experiences mild gentrification, and Chapel Hill is mostly immune to it. We zoomed in even further on Durham and discovered that gentrifiaction is most prevalent in East Durham, a historically Black part of town. Our analysis of Durham suggest that gentrification is more than just a change in demographics -- it affects the social fabric of a city as well.   
+
+  We created a logistic model that used urban character, county, median home price, and percentage changes in college-educated whites, white-collar jobs, those with no diploma, and those with just a high school education to predict gentrification. From our hypothesis––that the change in college educated whites, median home price, and those with a bachelor degree would be the strongest predictors of gentrification––median home price change and proportional college-educated white change made it into our model. Classification as urban had the strongest impact on gentrification, which aligns with our spatial analysis. Overall, we conclude that the proportional change in college educated whites and an area’s urban character are the two strongest predictors of gentrification in the Research Triangle area. In other words, the displacement of the urban black population is associated with an influx of college-educated whites in those urban areas.
+
+Of all the variables we started with, three education-based variables––proportional change in college-educated whites, those with no high school diploma, and those with only a high school diploma–– made it into our final model. This is an interesting link––further research could be done on the relationship between gentrification and education at a variety of socioeconomic levels.
+
+Gentrification is a complex phenomenon. While we focused specifically on the change in Black population to determine gentrification within our study, gentrification can impact a variety of different socioeconomic groups. For a more rigorous and complete understanding of demographic shifts and gentrification in the Research Triangle region or North Carolina at large, the different socioeconomic groups should be taken into consideration. It would be very productive to study the demographic shifts of the Hispanic population and low-income population at large (broken down by specific racial categories). Studying shifts in public housing projects and populations in the Research Triangle region would also be productive in gaining a more complete picture of gentrification. In addition, more comparative analysis could be done between high-growth cities to determine the root causes of gentrification. Government policy, demographic history, and type of growth could be analyzed. This would allow policymakers, non-governmental organizations, and developers to better understand and mitigate the impacts of gentrification on local communities. 
+
+
+### Section 6: Additional Work
+
+Univariate EDA 
+
+```{r plot1, fig.height = 5, fig.width = 7}
+p1 <- ggplot(data = manual, mapping = aes(x = privateschool)) + 
+  geom_histogram() +
+  labs(title = "Distribution of Private School", 
+       x = "Private school", y = "Count")
+p2 <-ggplot(data = manual, mapping = aes(x = collegewhite)) + 
+  geom_histogram()+
+  labs(title = "Distribution of College White", 
+       x = "College White", y = "Count")
+p3 <-ggplot(data = manual, mapping = aes(x = homeprice_med)) + 
+  geom_histogram()+
+  labs(title = "Distribution of Home Price Median", 
+       x = "Home Price Median", y = "Count")
+p4 <-ggplot(data = manual, mapping = aes(x = income_med)) + 
+  geom_histogram()+
+  labs(title = "Distribution of Income median", 
+       x = "Income median", y = "Count")
+p5 <-ggplot(data = manual, mapping = aes(x = moved)) + 
+  geom_histogram()+
+  labs(title = "Distribution of Moved", 
+       x = "Moved", y = "Count")
+p11 <-ggplot(data = manual, mapping = aes(x = nodiploma)) + 
+  geom_histogram()+
+  labs(title = "Distribution of No Diploma", 
+       x = "No Diploma", y = "Count")
+p12 <-ggplot(data = manual, mapping = aes(x = highschoolgrad)) + 
+  geom_histogram()+
+  labs(title = "Distribution of Highschool Grad", 
+       x = "Highschool Grad", y = "Count")
+p13 <-ggplot(data = manual, mapping = aes(x = collegedegree)) + 
+  geom_histogram()+
+  labs(title = "Distribution of College Degree", 
+       x = "College Degree", y = "Count")
+
+p25 <-ggplot(data = manual, mapping = aes(x = County)) + 
+geom_bar()+
+labs(title = "Distribution of County", 
+x = "County", y = "Count")
+
+(p1 + p3 + p2) / (p4 + p5 + p11) / (p12 + p13 + p25)
+```
+
+Each predictor variable is normally distributed around 0.
+
+
+Bivariate EDA: 
+
+```{r plot2, fig.height = 5, fig.width = 7}
+p6 <- ggplot(data = manual, mapping = aes(x = gent, y = privateschool)) + 
+  geom_boxplot() +
+  labs(title = "Distribution of Private School vs Gent", 
+       x = "Gent", y = "Private School")
+
+p7 <- ggplot(data = manual, mapping = aes(x = gent, y = collegewhite)) + 
+  geom_boxplot()+
+  labs(title = "Distribution of College White vs Gent", 
+       x = "Gent", y = "College White")
+
+p8 <- ggplot(data = manual, mapping = aes(x = gent, y = moved)) + 
+  geom_boxplot()+
+  labs(title = "Distribution of Moved vs Gent", 
+       x = "Gent", y = "Movedl")
+p9 <- ggplot(data = manual, mapping = aes(x = gent, y = income_med)) + 
+  geom_boxplot()+
+  labs(title = "Distribution of Income Median vs Gent", 
+       x = "Gent", y = "HIncome Median")
+p10 <- ggplot(data = manual, mapping = aes(x = gent, y = homeprice_med)) + 
+  geom_boxplot()  +
+  labs(title = "Distribution of Home Price Median vs Gent", 
+       x = "Gent", y = "Home Price Median")
+
+p14 <- ggplot(data = manual, mapping = aes(x = gent, y = nodiploma)) + 
+  geom_boxplot() +
+  labs(title = "Distribution of No Diploma vs Gent", 
+       x = "Gent", y = "No Diploma")
+p15 <- ggplot(data = manual, mapping = aes(x = gent, y = highschoolgrad)) + 
+  geom_boxplot() +
+  labs(title = "Distribution of Highschool Grad vs Gent", 
+       x = "Gent", y = "Highschool Grad")
+
+p16 <- ggplot(data = manual, mapping = aes(x = gent, y = collegedegree)) + 
+  geom_boxplot() +
+  labs(title = "Distribution of College Degree vs Gent", 
+       x = "Gent", y = "College Degree")
+
+p20 <- ggplot(data = manual2, aes(x = County, fill = rural)) +
+
+geom_bar(position = "fill") +
+
+labs(y = "Proportion", 
+
+title = "Urban character of census tracts by county") +
+
+coord_flip()
+
+
+p21 <- ggplot(data = manual2, aes(x = County, fill = gent)) +
+
+geom_bar(position = "fill") +
+
+labs(y = "Proportion", 
+
+title = "Gentrification of Tracts by County") +
+
+coord_flip()
+
+
+
+p22 <- ggplot(data = manual2, aes(x = rural, fill = gent)) +
+
+geom_bar(position = "fill") +
+
+labs(y = "Proportion", 
+
+title = "Gentrification by Urban Character") +
+
+coord_flip()
+
+
+
+p22 / p21 / p20
+
+(p6 + p7 + p8) / (p9 + p10 + p14) / (p15 + p16) 
+```
+
+The relationship between the response variable "gent" and the predictor variables are all each roughly normal.
+
+Considering interaction terms:
+
+After determining Rural and County are significant predictor variables, we considered adding interaction terms with rural to our model. We used k-fold cross validation to determine if we should add the interactions between median home price and rural and that between college educated whites and rural. We start by looking at the 5-fold cross validation results for the model above, and then we run the same test with our new interaction terms.
+
+
+Considering interaction between rural and county:
+```{r}
+set.seed(04012019)
+ad_cv3 <- crossv_kfold(manual, 5)
+
+models3 <- map(ad_cv3$train, 
+              ~ glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med + rural + County, data=manual, family= "binomial"))
+```
+
+```{r}
+train_mse_3 <- map2_dbl(models3, ad_cv3$train, mse)
+test_mse_3 <- map2_dbl(models3, ad_cv3$test, mse)
+
+mse_ad3 <- tibble(
+  test_fold  = 1:5,
+  train_mse_3, 
+  test_mse_3
+)
+
+mse_ad3 %>%
+  summarise(mean_train_mse3 = mean(train_mse_3), 
+           mean_test_mse3 = mean(test_mse_3)) %>% 
+  kable(format="markdown", digits=3)
+
+```
+
+```{r}
+set.seed(04012019)
+ad_cv_4 <- crossv_kfold(manual, 5)
+
+models_4 <- map(ad_cv_4$train, 
+              ~ glm(gent ~ collegewhite + whitecollar + nodiploma + highschoolgrad + homeprice_med + rural + County + County*rural,  data=manual, family= "binomial"))
+```
+
+```{r}
+train_mse_4 <- map2_dbl(models_4, ad_cv_4$train, mse)
+test_mse_4 <- map2_dbl(models_4, ad_cv_4$test, mse)
+
+mse_ad_4 <- tibble(
+  test_fold  = 1:5,
+  train_mse_4, 
+  test_mse_4
+)
+
+mse_ad_4 %>%
+  summarise(mean_train_mse4 = mean(train_mse_4), 
+           mean_test_mse4 = mean(test_mse_4)) %>% 
+  kable(format="markdown", digits=3)
+
+```
+
+
+Model 1 (excluding interaction terms) testing error: 7.028
+Model 2 (including interaction terms) testing error: 7.038
+
+Although the testing errors are very close, Model 1 performs better than Model 2 when predicting if a census tract is gentrified. Therefore, we will continue with the model that does not include the interaction between county and rural character.
+ 
+Then we did another K-fold cross validation considering interactions between median homeprice and rural, and between college educated whites and rural:
 ```{r}
 set.seed(04012019)
 ad_cv <- crossv_kfold(manual, 5)
@@ -502,198 +875,12 @@ mse_ad_2 %>%
 
 ```
 
-Finally we compared the estimated testing error for both models:
 
-Model 1 (excluding interaction terms): 5.369539
-Model 2 (including interaction terms): homeprice_med*rural and collegewhite*rural: 5.671572
+Model 1 (excluding interaction terms) testing error: 5.369539
+Model 2 (including interaction terms)testing error: 5.671572
 
-Although the testing errors are very close, Model 1 performs better than Model 2 when predicting if a census tract is gentrified. Therefore, we will continue with the model that does not include the interaction terms.
+Although the testing errors are very close, Model 1 performs better than Model 2 when predicting if a census tract is gentrified. Therefore, we will continue with the model that does not include the interaction between median homeprice and rural character and between college educated whites and rural character.
 
-
-Before we begin using our model we want to make sure that multicollinearity is not a problem in our model. In order to avoid collinearity of response variables we want to confirm that no two variables are highly correlated with one another. We do so by checking multicollinearity and looking for variables with high VIF (Variance Inflation Factor).
-
-```{r}
-library(rms) 
-tidy(vif(model_aic_full)) %>% 
-  kable(format="markdown", digits=3)
-```
-
-Since the VIF for all of our variables is relatively low and none even come close to 10+, we can be confident that multicollinearity is not a problem in our model and none of the variables are highly correlated with one another.
-
-
-### Assumptions 
-
-In order to use the full model with the predictor variables collegewhite, whitecollar, nodiploma, highschoolgrad, 
-homeprice_med, and rural, we must first test how well this model satisfies assumptions. A complete look at assumptions is present in section 6 (Additional work), for now we will just discuss the independence assumption.
-
-```{r}
-model_aug <- augment(model_aic_full, type.predict = "response", type.residuals = "response")
-model_aug
-```
-
-We created a heat map of residuals in order to examine the independence assumption:
-
-```{r}
-model_aug <- model_aug %>%
-    mutate(.rownames=as.numeric(.rownames))
-model_aug_merged <- inner_join(merged, model_aug, by = ".rownames")
-```
-
-```{r}
-ggplot(data = model_aug_merged, aes(fill = .resid)) +
-  geom_sf() +
-  labs(title = "Research Triangle", 
-       subtitle = "Heat Map of Residuals") +
-  theme_void() +
-  scale_fill_distiller(palette = "BuPu" , guide = "legend")
-```
-
-We are able to see from the map that the distribution of residuals is fairly random. From this, we are able to conclude the independence is satisfied.
-
-### Section 3: Discussion
-
-Now that we've confirmed that our model satisfies assumptions, let's take another look at our chosen logistic model again: 
-
-```{r}
-tidy(model_aic_full, conf.int = TRUE, exponentiate = FALSE) %>%
-  kable(digits = 3, format = "markdown")
-```
-
-`log(pi_hat/(1-pi_hat)) = -2.877 + (0.094)*(collegewhite) - (0.055)*(whitecollar) + (0.118)*(nodiploma) + (0.061)*(highschoolgrad) + (0.00001)*(homeprice_med) + (0.891)*(ruralUrban)`
-
-The intercept, -2.877, describes the log-odds that a census tract has experienced gentrification when the percentage point change (from 2010-2017) in college educated whites, white collar, no diploma, highschool grad, and home price median is equal to zero and the census tract is in a rural area. 
-
-We would like to discuss the variables that have the most impact on the response variable gent. Therefore, we will discuss variables with p-values of <0.05. 
-The variable collegewhite seems to have a reliably strong impact on gent: holding all other variables constant, with a unit change in collegewhite, the odds of gentrification are expected to multiply by a factor of exp(0.094). 
-
-In addition, the rural variable also appears to have a strong impact. According to the model coefficient for the term ruralUrban, holding all other variables constant, the odds of gentrification for an urban area is expected to be exp(0.891) that of a rural locale. We would like to suggest that the change in college-educated whites in a county and urban character likely greatly impact gentrification.
-
-
-In order to use our model to predict whether an area is gentrified or not, we create a Receiver Operating Characteristic (ROC) curve. The ROC curve will both help us assess how well the model fits the data as well as pick a threshold for our logistic model.
-
-```{r}
-(roc_curve <- ggplot(model_aug,
-                     aes(d = as.numeric(gent) - 1,
-                         m = .fitted)) +
-  geom_roc(n.cuts = 10, labelround = 3) +
-  geom_abline(intercept = 0) +
-  labs(title = "Receiver Operating Characteristic (ROC) curve", 
-       x = "False Positive Rate (1 - Specificity)",
-       y = "True Positive Rate (Sensitivity)") )
-```
-
-
-```{r}
-calc_auc(roc_curve)$AUC
-```
-
-Since our AUC 0.742 we can see that the logistic model fits the data fairly well.
-
-In order to pick an appropriate threshold for predicting gentrification, we have to consider the potential consequences of misclassifying an area as gentrified or not gentrified. If we erroneously classify an area as not gentrified, we could miss an opportunity to control the effects of gentrification and we risk letting growth have far-reaching cultural consequences. It we call an area gentrified, somebody will likely conduct further research on the area before making any policy decisions. The risk of false-positive classification is not very high compared to the risk of a false-negative outcome.
-
-The Apache Junction Armchairs, being socially responsible policymakers, are more worried about falsely classifying an area as not gentrified than we are about falsely classifying an area as gentrified. The social costs are higher in the former scenario. Given these concerns, we are picking .143 as the threshold to predict gentrification.
-
-### Section 4: Limitations
-
-The biggest limitation of our study is the definition of gentrification. Many prior studies define gentrification as some combination of demographic characteristics and poverty rate. Our characterization of gentrification is hamstrung by the fact that it does not incorporate any economic factors. In addition, it would be helpful to analyze more variables. Gentrification is a process that incorporates a variety of socioeconomic groups, so more racial and economic data would have been helpful for analyzing gentrification from a number of different angles. 
-
-In addition, we turned ‘Black percentage point change’ into a logistic model by picking an arbitrary threshold for determining if a tract was gentrified or not based on a rough measure of the Standard Deviation. Since the average census tract (omitting NA’s) fell 6.76 PPs away from the mean of the distribution of “black” , which was roughly 0, we decided to convert any tract with a value “black” of less than or equal to 6.76 into a gentrified tract. This is not grounded in any social science research, but rather it is relative to the distribution. A more complete analysis would determine an appropriate threshold of gentrification based on some mixture of quantitative and qualitative research.
-
-### Section 5: Conclusion
-
-Our study was motivated by two questions: where in the Research Triangle does displacement of black population occur, and which factors contribute to the displacement of the black population in the Research Triangle? The spatial data suggests a strong association between gentrification and urban character--most gentrified tracts were in urban locales, and many were also in city centers. We created a logistic model that used rural/urban classification and percentage change in college-educated whites, white-collar jobs, those with no diploma, those with just a high school education, and median home price to predict gentrification. From our hypothesis––that the change in college educated whites, median home price, and those with a bachelor degree would be the strongest predictors of gentrification––median home price change and proportional college-educated white change made it into our model. Classification as urban had the strongest impact on gentrification, which aligns with our spatial analysis. Overall, we conclude that the proportional change in college educated whites and an area’s urban character are the two strongest predictors of gentrification in the Research Triangle area. In other words, the displacement of the urban black population is associated with an influx of college-educated whites in those urban areas.
-
-Of all the variables we started with, three education-based variables––proportional change in college-educated whites, those with no high school diploma, and those with only a high school diploma–– made it into our final model. This is an interesting link––further research could be done on the relationship between gentrification and education at a variety of socioeconomic levels.
-
-Gentrification is a complex phenomenon. While we focused specifically on the change in Black population to determine gentrification within our study, gentrification can impact a variety of different socioeconomic groups. For a more rigorous and complete understanding of demographic shifts and gentrification in the Research Triangle region or North Carolina at large, the different socioeconomic groups should be taken into consideration. It would be very productive to study the demographic shifts of the Hispanic population and low-income population at large (broken down by specific racial categories). Studying shifts in public housing projects and populations in the Research Triangle region would also be productive in gaining a more complete picture of gentrification. This would allow policymakers, non-governmental organizations, and developers to better understand and mitigate the impacts of gentrification on local communities. 
-
-
-### Section 6: Additional Work
-
-Univariate EDA 
-
-```{r plot1, fig.height = 5, fig.width = 7}
-p1 <- ggplot(data = manual, mapping = aes(x = privateschool)) + 
-  geom_histogram() +
-  labs(title = "Distribution of Private School", 
-       x = "Private school", y = "Count")
-p2 <-ggplot(data = manual, mapping = aes(x = collegewhite)) + 
-  geom_histogram()+
-  labs(title = "Distribution of College White", 
-       x = "College White", y = "Count")
-p3 <-ggplot(data = manual, mapping = aes(x = homeprice_med)) + 
-  geom_histogram()+
-  labs(title = "Distribution of Home Price Median", 
-       x = "Home Price Median", y = "Count")
-p4 <-ggplot(data = manual, mapping = aes(x = income_med)) + 
-  geom_histogram()+
-  labs(title = "Distribution of Income median", 
-       x = "Income median", y = "Count")
-p5 <-ggplot(data = manual, mapping = aes(x = moved)) + 
-  geom_histogram()+
-  labs(title = "Distribution of Moved", 
-       x = "Moved", y = "Count")
-p11 <-ggplot(data = manual, mapping = aes(x = nodiploma)) + 
-  geom_histogram()+
-  labs(title = "Distribution of No Diploma", 
-       x = "No Diploma", y = "Count")
-p12 <-ggplot(data = manual, mapping = aes(x = highschoolgrad)) + 
-  geom_histogram()+
-  labs(title = "Distribution of Highschool Grad", 
-       x = "Highschool Grad", y = "Count")
-p13 <-ggplot(data = manual, mapping = aes(x = collegedegree)) + 
-  geom_histogram()+
-  labs(title = "Distribution of College Degree", 
-       x = "College Degree", y = "Count")
-(p1 + p3 + p2) / (p4 + p5 + p11) / (p12 + p13)
-```
-
-Each predictor variable is normally distributed around 0.
-
-
-Bivariate EDA: 
-
-```{r plot2, fig.height = 5, fig.width = 7}
-p6 <- ggplot(data = manual, mapping = aes(x = gent, y = privateschool)) + 
-  geom_boxplot() +
-  labs(title = "Distribution of Private School vs Gent", 
-       x = "Gent", y = "Private School")
-
-p7 <- ggplot(data = manual, mapping = aes(x = gent, y = collegewhite)) + 
-  geom_boxplot()+
-  labs(title = "Distribution of College White vs Gent", 
-       x = "Gent", y = "College White")
-
-p8 <- ggplot(data = manual, mapping = aes(x = gent, y = moved)) + 
-  geom_boxplot()+
-  labs(title = "Distribution of Moved vs Gent", 
-       x = "Gent", y = "Movedl")
-p9 <- ggplot(data = manual, mapping = aes(x = gent, y = income_med)) + 
-  geom_boxplot()+
-  labs(title = "Distribution of Income Median vs Gent", 
-       x = "Gent", y = "HIncome Median")
-p10 <- ggplot(data = manual, mapping = aes(x = gent, y = homeprice_med)) + 
-  geom_boxplot()  +
-  labs(title = "Distribution of Home Price Median vs Gent", 
-       x = "Gent", y = "Home Price Median")
-
-p14 <- ggplot(data = manual, mapping = aes(x = gent, y = nodiploma)) + 
-  geom_boxplot() +
-  labs(title = "Distribution of No Diploma vs Gent", 
-       x = "Gent", y = "No Diploma")
-p15 <- ggplot(data = manual, mapping = aes(x = gent, y = highschoolgrad)) + 
-  geom_boxplot() +
-  labs(title = "Distribution of Highschool Grad vs Gent", 
-       x = "Gent", y = "Highschool Grad")
-
-p16 <- ggplot(data = manual, mapping = aes(x = gent, y = collegedegree)) + 
-  geom_boxplot() +
-  labs(title = "Distribution of College Degree vs Gent", 
-       x = "Gent", y = "HCollege Degree")
-(p6 + p7 + p8) / (p9 + p10 + p14) / (p15 + p16)
-```
-
-The relationship between the response variable "gent" and the predictor variables are all each roughly normal.
 
 ###Assumptions 
 
