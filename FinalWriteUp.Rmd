@@ -891,7 +891,7 @@ For testing linearity, we will augment the model with predicted probabilities an
 binned residual plots for predicted probability and numeric variables. 
 
 ```{r}
-model_aug <- augment(model_aic_full, type.predict = "response", type.residuals = "response")
+model_aug <- augment(model_county, type.predict = "response", type.residuals = "response")
 model_aug
 ```
 
@@ -935,7 +935,11 @@ model_aug %>%
   group_by(rural) %>%
   summarise(mean_resid = mean(.resid))
 ```
-
+```{r}
+model_aug %>%
+  group_by(County) %>%
+  summarise(mean_resid = mean(.resid))
+```
 The linearity assumption is satisfied. The binned residuals vs. predicted probability plot shows irregularity with a very slight clustering of residual values below 0.0. The binned residuals vs. collegewhite plot shows irregularity. The binned residuals vs. whitecollar plot shows irregularity, with a slight clustering of residual values below 0.0 and a slight increase in residual values as you move right. The binned residuals vs. nodiploma, binned residuals vs. highschoolgrad, and binned residuals vs. homeprice_med show complete irregularity. For the predictor variable rural, which has two categories rural and urban, both mean residuals are very close to zero. There is no strong indication of nonlinearity; therefore, we can assume that there is a linear relationship between log(gent) and the predictor variables.
 
 We created a heat map of residuals to examine the independence assumption:
